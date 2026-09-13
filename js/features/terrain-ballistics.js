@@ -12,7 +12,10 @@
         initialized: false,
         enabled: false,
         config: null,
+        terrainDefinitions: new Map(),
         terrains: new Map(),
+        terrainPending: new Map(),
+        terrainFailures: new Set(),
         rerenderQueued: false,
         lastWarning: null,
         confirmedOrigin: null,
@@ -416,39 +419,56 @@
         };
     }
 
-    async function initTerrainBallistics() {
-        if (state.initialized) {
-            return state.enabled;
+    async function ensureTerrainBallisticsMap(mapId) {
+        if (
+            !state.config ||
+            !mapId ||
+            mapId === 'custom'
+        ) {
+            return false;
         }
 
-        state.initialized = true;
+        if (state.terrains.has(mapId)) {
+            return true;
+        }
 
-        try {
-            const config = await fetchJson(CONFIG_URL);
-            validateConfig(config);
+        if (state.terrainFailures.has(mapId)) {
+            return false;
+        }
 
-            const definitions = [
-                ...normalizeTerrainMaps(config).values()
-            ];
+        if (state.terrainPending.has(mapId)) {
+            return state.terrainPending.get(mapId);
+        }
 
-            const results = await Promise.allSettled(
-                definitions.map(loadTerrainDefinition)
-            );
+        const definition =
+            state.terrainDefinitions.get(mapId);
 
-            for (let i = 0; i < results.length; i++) {
-                const result = results[i];
-                const definition = definitions[i];
+        if (!definition) {
+            return false;
+        }
 
-                if (result.status === 'fulfilled') {
-                    const terrain = result.value;
-                    state.terrains.set(terrain.mapId, terrain);
+        const pending =
+            loadTerrainDefinition(definition)
+                .then(terrain => {
+                    state.terrains.set(
+                        terrain.mapId,
+                        terrain
+                    );
 
                     terrainLog(
                         'loaded',
                         `map=${terrain.mapId}`,
                         `chunks=${Object.keys(terrain.manifest.chunks).length}`
                     );
-                } else {
+
+                    queueResultRerender();
+                    return true;
+                })
+                .catch(error => {
+                    state.terrainFailures.add(
+                        definition.mapId
+                    );
+
                     if (
                         typeof trackOperationalFailure ===
                             'function'
@@ -466,16 +486,58 @@
 
                     terrainWarn(
                         `Failed to initialize Terrain3D for map ${definition.mapId}; that map will use flat-table fallback.`,
-                        result.reason
+                        error
                     );
-                }
-            }
+
+                    return false;
+                })
+                .finally(() => {
+                    state.terrainPending.delete(
+                        definition.mapId
+                    );
+                });
+
+        state.terrainPending.set(
+            definition.mapId,
+            pending
+        );
+
+        return pending;
+    }
+
+    async function initTerrainBallistics() {
+        if (state.initialized) {
+            return state.enabled;
+        }
+
+        state.initialized = true;
+
+        try {
+            const config = await fetchJson(CONFIG_URL);
+            validateConfig(config);
 
             state.config = config;
-            state.enabled = state.terrains.size > 0;
+            state.terrainDefinitions =
+                normalizeTerrainMaps(config);
+            state.enabled =
+                state.terrainDefinitions.size > 0;
 
             if (!state.enabled) {
-                throw new Error('No Terrain3D map manifests could be loaded');
+                throw new Error('Terrain3D config has no supported maps');
+            }
+
+            const currentMapId =
+                typeof S === 'object' && S
+                    ? S.map
+                    : '';
+
+            if (
+                currentMapId &&
+                currentMapId !== 'custom'
+            ) {
+                await ensureTerrainBallisticsMap(
+                    currentMapId
+                );
             }
 
             if (!config.calibration?.ready) {
@@ -984,6 +1046,27 @@
             return fallback;
         }
 
+        if (
+            !state.terrains.has(context.mapId) &&
+            state.terrainDefinitions.has(context.mapId) &&
+            !state.terrainFailures.has(context.mapId)
+        ) {
+            ensureTerrainBallisticsMap(
+                context.mapId
+            );
+
+            return {
+                solutions: context.solutions,
+                meta: {
+                    available: true,
+                    pendingTerrain: true,
+                    applied: false,
+                    reason: 'terrain-manifest-pending',
+                    mapId: context.mapId
+                }
+            };
+        }
+
         const terrain = state.terrains.get(context.mapId);
 
         if (!terrain) {
@@ -1065,7 +1148,10 @@
             calibrated: false,
             autoCorrectionEnabled: false,
             mode: 'terrain-information-only',
-            supportedMaps: [...state.terrains.keys()],
+            supportedMaps: [
+                ...state.terrainDefinitions.keys()
+            ],
+            loadedMaps: [...state.terrains.keys()],
             cachedChunks
         };
     }
@@ -1075,6 +1161,9 @@
 
     window.getTerrainBallisticSolutions =
         getTerrainBallisticSolutions;
+
+    window.ensureTerrainBallisticsMap =
+        ensureTerrainBallisticsMap;
 
     window.getTerrainBallisticsState =
         getTerrainBallisticsState;

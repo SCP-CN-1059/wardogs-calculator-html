@@ -7,6 +7,9 @@ const MOTD_READ_PREFIX =
 let currentMobileMotd =
     null;
 
+let currentDesktopMotd =
+    null;
+
 function getLocalizedMotdValue(value) {
     if (typeof value === 'string') {
         return value;
@@ -166,6 +169,7 @@ function removeExistingMotd() {
         );
 
     syncMobileMotdButton();
+    syncDesktopMotdButton();
 }
 
 function closeMotd(
@@ -204,6 +208,7 @@ function closeMotd(
             }
 
             syncMobileMotdButton();
+            syncDesktopMotdButton();
         },
         150
     );
@@ -294,54 +299,9 @@ function createMotd(motd) {
             )
         );
 
-    const footer =
-        document.createElement(
-            'div'
-        );
-
-    footer.className =
-        'motd-footer';
-
-    const dontShowLabel =
-        document.createElement(
-            'label'
-        );
-
-    dontShowLabel.className =
-        'motd-dismiss-label';
-
-    const dontShowAgain =
-        document.createElement(
-            'input'
-        );
-
-    dontShowAgain.type =
-        'checkbox';
-
-    dontShowAgain.className =
-        'motd-dismiss-checkbox';
-
-    const dontShowText =
-        document.createElement(
-            'span'
-        );
-
-    dontShowText.textContent =
-        tr('motdDontShowAgain');
-
-    dontShowLabel.append(
-        dontShowAgain,
-        dontShowText
-    );
-
-    footer.appendChild(
-        dontShowLabel
-    );
-
     container.append(
         header,
-        message,
-        footer
+        message
     );
 
     closeButton.addEventListener(
@@ -351,7 +311,7 @@ function createMotd(motd) {
             closeMotd(
                 container,
                 motd,
-                dontShowAgain
+                null
             );
         }
     );
@@ -368,10 +328,155 @@ function createMotd(motd) {
             );
 
             syncMobileMotdButton();
+            syncDesktopMotdButton();
         }
     );
 
     return container;
+}
+
+function createDesktopMotdButton() {
+    let button =
+        document.getElementById(
+            'desktopMotdButton'
+        );
+
+    if (button) {
+        return button;
+    }
+
+    button =
+        document.createElement(
+            'button'
+        );
+
+    button.id =
+        'desktopMotdButton';
+
+    button.type =
+        'button';
+
+    button.className =
+        'desktop-motd-button';
+
+    button.hidden = true;
+
+    button.innerHTML = `
+        <svg
+            aria-hidden="true"
+            viewBox="0 0 24 24"
+            width="18"
+            height="18"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.8"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+        >
+            <path
+                d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"
+            ></path>
+            <path d="M10 21h4"></path>
+        </svg>
+        <span class="desktop-motd-dot"></span>
+    `;
+
+    button.addEventListener(
+        'click',
+        event => {
+            event.preventDefault();
+            event.stopPropagation();
+
+            if (!currentDesktopMotd) {
+                return;
+            }
+
+            markMotdRead(
+                currentDesktopMotd.id
+            );
+
+            button.hidden = true;
+
+            createMotd(
+                currentDesktopMotd
+            );
+        }
+    );
+
+    const controls =
+        document.querySelector(
+            'header .header-controls'
+        );
+
+    if (!controls) {
+        return null;
+    }
+
+    const themeToggle =
+        controls.querySelector(
+            '#themeToggle'
+        );
+
+    if (themeToggle) {
+        controls.insertBefore(
+            button,
+            themeToggle
+        );
+    } else {
+        controls.appendChild(
+            button
+        );
+    }
+
+    return button;
+}
+
+function syncDesktopMotdButton() {
+    if (isMobileMotdUI()) {
+        return;
+    }
+
+    const button =
+        createDesktopMotdButton();
+
+    if (!button) {
+        return;
+    }
+
+    const hasMotd =
+        Boolean(
+            currentDesktopMotd?.id
+        );
+
+    const fullMotdOpen =
+        Boolean(
+            document.querySelector(
+                '.motd'
+            )
+        );
+
+    button.hidden =
+        !hasMotd ||
+        fullMotdOpen;
+
+    button.classList.toggle(
+        'has-unread',
+        hasMotd &&
+        !isMotdRead(
+            currentDesktopMotd.id
+        )
+    );
+
+    const label =
+        tr('motdTitle');
+
+    button.setAttribute(
+        'aria-label',
+        label
+    );
+
+    button.title =
+        label;
 }
 
 function createMobileMotdButton() {
@@ -575,13 +680,21 @@ function updateMotdLocalization() {
 
 async function loadMotd() {
     try {
-        const response =
-            await fetch(
+        const resource =
+            versionStaticResource(
                 resourceURL(
                     'data/motd.json'
-                ),
+                )
+            );
+
+        const response =
+            await fetch(
+                resource.url,
                 {
-                    cache: 'no-store'
+                    cache:
+                        resource.versioned
+                            ? 'force-cache'
+                            : 'no-cache'
                 }
             );
 
@@ -642,9 +755,10 @@ async function initMotd() {
         await loadMotd();
 
     /*
-     * Desktop keeps the existing automatic popup.
-     * Mobile only exposes the current MOTD through
-     * the notification bell in the header.
+     * Never inject the full announcement automatically. A late async text
+     * card can become the page's LCP long after the calculator is usable.
+     * Mobile and desktop both expose a lightweight notification control; the
+     * full MOTD is painted only after an explicit user interaction.
      */
     if (isMobileMotdUI()) {
 
@@ -657,11 +771,9 @@ async function initMotd() {
         return;
     }
 
-    if (!motd) {
-        return;
-    }
+    currentDesktopMotd =
+        motd;
 
-    createMotd(
-        motd
-    );
+    createDesktopMotdButton();
+    syncDesktopMotdButton();
 }

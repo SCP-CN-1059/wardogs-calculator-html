@@ -122,6 +122,8 @@ async function loadRuntimeScript({
     });
 }
 
+let terrainRuntimePromise = null;
+
 async function loadTerrainBallisticsRuntime() {
     try {
         await loadRuntimeScript({
@@ -189,6 +191,28 @@ async function loadTerrainBallisticsRuntime() {
             error
         );
     }
+}
+
+function requestTerrainBallisticsRuntime() {
+    if (!terrainRuntimePromise) {
+        terrainRuntimePromise =
+            loadTerrainBallisticsRuntime();
+    }
+
+    return terrainRuntimePromise;
+}
+
+function requestTerrainBallisticsForCurrentState() {
+    if (
+        typeof S !== 'object' ||
+        !S ||
+        S.weapon !== 'spg' ||
+        S.map === 'custom'
+    ) {
+        return null;
+    }
+
+    return requestTerrainBallisticsRuntime();
 }
 
 
@@ -390,15 +414,11 @@ async function init() {
          * intentionally outside the critical startup path and slightly
          * staggered so slow routes do not compete with the first render.
          */
-        scheduleAfterFirstPaint(
-            loadTerrainBallisticsRuntime,
-            {
-                delay: 0,
-                timeout: 1000,
-                label: 'Terrain3D runtime'
-            }
-        );
-
+        /*
+         * Terrain3D is intentionally not scheduled here. It is loaded on the
+         * first SPH-2 interaction instead, so mortar-only and browse-only
+         * sessions never pay for the runtime, config or terrain manifests.
+         */
         scheduleAfterFirstPaint(
             initMotd,
             {

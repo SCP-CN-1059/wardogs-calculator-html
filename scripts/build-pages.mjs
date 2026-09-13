@@ -332,6 +332,16 @@ function replaceApplicationScripts(
     let output = html;
     let bundleInserted = false;
 
+    const preload =
+        `<link as="script" fetchpriority="high" href="${bundleFile}" rel="preload"/>`;
+
+    if (!output.includes(preload)) {
+        output = output.replace(
+            /<\/head>/i,
+            `${preload}\n</head>`
+        );
+    }
+
     for (const file of scriptFiles) {
         const escapedFile =
             file.replace(

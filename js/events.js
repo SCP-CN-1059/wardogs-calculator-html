@@ -19,6 +19,24 @@ function bindThemeToggle() {
 
 function bindEvents() {
 
+    /*
+     * Persisted SPH-2 sessions do not need Terrain3D before the user actually
+     * interacts with the calculator. Pointer interaction is a cheap universal
+     * trigger; requestTerrainBallisticsRuntime() is idempotent.
+     */
+    document.addEventListener(
+        'pointerdown',
+        () => {
+            if (
+                typeof requestTerrainBallisticsForCurrentState ===
+                    'function'
+            ) {
+                requestTerrainBallisticsForCurrentState();
+            }
+        },
+        { passive: true }
+    );
+
     $('mapSelect').addEventListener(
         'change',
         () => {
@@ -86,6 +104,13 @@ function bindEvents() {
             updatePresetLock();
 
             if (
+                typeof requestTerrainBallisticsForCurrentState ===
+                    'function'
+            ) {
+                requestTerrainBallisticsForCurrentState();
+            }
+
+            if (
                 typeof trackAnalytics ===
                 'function'
             ) {
@@ -122,6 +147,13 @@ function bindEvents() {
                 $('weapon').value;
 
             persistAppSelections();
+
+            if (
+                typeof requestTerrainBallisticsForCurrentState ===
+                    'function'
+            ) {
+                requestTerrainBallisticsForCurrentState();
+            }
 
             if (
                 typeof trackAnalytics ===

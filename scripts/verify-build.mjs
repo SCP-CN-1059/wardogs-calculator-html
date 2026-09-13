@@ -54,6 +54,10 @@ for (const mapId of ['bakurani', 'ozeti', 'zestafona']) {
 const sitemap = await readFile(join(dist, 'sitemap.xml'), 'utf8');
 const robots = await readFile(join(dist, 'robots.txt'), 'utf8');
 const homepage = await readFile(join(dist, 'index.html'), 'utf8');
+const mobileHomepage = await readFile(
+    join(dist, 'mobile', 'index.html'),
+    'utf8'
+);
 const landingStyle = join(dist, 'styles', 'map-landing.css');
 const localeIndex = JSON.parse(
     await readFile(join(root, 'locales', 'index.json'), 'utf8')
@@ -71,6 +75,16 @@ const descriptions = new Set();
 const headings = new Set();
 
 assert.ok(artifactFiles.includes(landingStyle), 'map landing stylesheet is missing');
+assert.match(
+    homepage,
+    /<link\b[^>]*\bas="script"[^>]*\bhref="js\/app\.bundle\.js\?v=[a-f0-9]{12}"[^>]*\brel="preload"/i,
+    'desktop application bundle is not preloaded'
+);
+assert.match(
+    mobileHomepage,
+    /<link\b[^>]*\bas="script"[^>]*\bhref="js\/mobile\.bundle\.js\?v=[a-f0-9]{12}"[^>]*\brel="preload"/i,
+    'mobile application bundle is not preloaded'
+);
 assert.match(robots, /^Allow:\s*\/$/mi, 'robots.txt does not allow crawling');
 assert.doesNotMatch(robots, /Disallow:\s*\/maps/i, 'robots.txt blocks map pages');
 assert.match(robots, /Sitemap:\s*https:\/\/wardogs-artillery\.com\/sitemap\.xml/i, 'production sitemap is not advertised');

@@ -54,6 +54,13 @@ function inputs() {
 
 function inputPoint(type) {
 
+    if (
+        typeof requestTerrainBallisticsForCurrentState ===
+            'function'
+    ) {
+        requestTerrainBallisticsForCurrentState();
+    }
+
     const p =
         S[type];
 
