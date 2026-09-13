@@ -152,7 +152,7 @@ function getAnalyticsContextKey(
                 ? data.origin
                 : '';
 
-        return [
+        const parts = [
             name,
             map,
             area,
@@ -160,7 +160,26 @@ function getAnalyticsContextKey(
             code,
             resource,
             origin
-        ].join('|');
+        ];
+
+        if (name === 'client-error') {
+            parts.push(
+                typeof data?.phase === 'string'
+                    ? data.phase
+                    : '',
+                typeof data?.errorType === 'string'
+                    ? data.errorType
+                    : '',
+                typeof data?.source === 'string'
+                    ? data.source
+                    : '',
+                typeof data?.messageHash === 'string'
+                    ? data.messageHash
+                    : ''
+            );
+        }
+
+        return parts.join('|');
     }
 
     return [
@@ -215,12 +234,195 @@ function isAnalyticsAvailable() {
     );
 }
 
-function normalizeAnalyticsData(data) {
-    if (!data || typeof data !== 'object') {
-        return undefined;
+function getAnalyticsBuildId() {
+    try {
+        if (
+            typeof getStaticResourceVersion ===
+                'function'
+        ) {
+            const version =
+                getStaticResourceVersion();
+
+            if (version) {
+                return `ea-build-${version.slice(0, 32)}`;
+            }
+        }
+    } catch (_) {
+        // Build context is optional in development.
     }
 
-    const normalized = {};
+    return 'dev';
+}
+
+function hashAnalyticsDiagnostic(value) {
+    const text = String(value || '');
+
+    if (!text) {
+        return '';
+    }
+
+    let hash = 2166136261;
+
+    for (let i = 0; i < text.length; i++) {
+        hash ^= text.charCodeAt(i);
+        hash = Math.imul(
+            hash,
+            16777619
+        );
+    }
+
+    return (hash >>> 0)
+        .toString(16)
+        .padStart(8, '0');
+}
+
+function normalizeClientErrorSource(value) {
+    const raw = String(value || '').trim();
+
+    if (!raw) {
+        return '';
+    }
+
+    try {
+        const url =
+            new URL(
+                raw,
+                window.location.href
+            );
+
+        if (
+            url.origin ===
+                window.location.origin
+        ) {
+            const parts =
+                url.pathname
+                    .split('/')
+                    .filter(Boolean);
+
+            return parts
+                .slice(-2)
+                .join('/')
+                .slice(0, 64);
+        }
+
+        return url.hostname
+            .toLowerCase()
+            .slice(0, 64);
+
+    } catch (_) {
+        return raw
+            .split(/[?#]/, 1)[0]
+            .slice(-64);
+    }
+}
+
+function getClientErrorStackLocation(error) {
+    const stack =
+        String(
+            error?.stack ||
+            ''
+        );
+
+    if (!stack) {
+        return {};
+    }
+
+    const match =
+        stack.match(
+            /((?:https?:\/\/|file:\/\/)[^\s)]+|[^\s()]+\.js(?:\?[^\s):]*)?):(\d+):(\d+)/i
+        );
+
+    if (!match) {
+        return {};
+    }
+
+    return {
+        source: match[1] || '',
+        line: Number(match[2]) || 0,
+        column: Number(match[3]) || 0
+    };
+}
+
+function createClientErrorDiagnosticData(
+    error,
+    overrides = {}
+) {
+    const stackLocation =
+        getClientErrorStackLocation(
+            error
+        );
+
+    const message =
+        overrides.message ??
+        error?.message ??
+        error?.reason?.message ??
+        (
+            typeof error === 'string'
+                ? error
+                : ''
+        );
+
+    const errorType =
+        overrides.errorType ??
+        error?.name ??
+        error?.reason?.name ??
+        (
+            error == null
+                ? 'unknown'
+                : typeof error
+        );
+
+    const line =
+        Number(
+            overrides.line ??
+            stackLocation.line
+        );
+    const column =
+        Number(
+            overrides.column ??
+            stackLocation.column
+        );
+
+    return {
+        phase:
+            String(
+                overrides.phase ||
+                'runtime'
+            ).slice(0, 32),
+        errorType:
+            String(
+                errorType ||
+                'unknown'
+            ).slice(0, 32),
+        source:
+            normalizeClientErrorSource(
+                overrides.source ||
+                stackLocation.source ||
+                ''
+            ),
+        line:
+            Number.isFinite(line) && line > 0
+                ? Math.round(line)
+                : 0,
+        column:
+            Number.isFinite(column) && column > 0
+                ? Math.round(column)
+                : 0,
+        messageHash:
+            hashAnalyticsDiagnostic(
+                message
+            )
+    };
+}
+
+function normalizeAnalyticsData(data) {
+    const normalized = {
+        build: getAnalyticsBuildId()
+    };
+
+    if (!data || typeof data !== 'object') {
+        return normalized;
+    }
 
     Object.entries(data)
         .forEach(([key, value]) => {
@@ -438,6 +640,34 @@ function trackOperationalFailure(
             origin:
                 typeof data?.origin === 'string'
                     ? data.origin
+                    : '',
+            phase:
+                typeof data?.phase === 'string'
+                    ? data.phase
+                    : '',
+            errorType:
+                typeof data?.errorType === 'string'
+                    ? data.errorType
+                    : '',
+            source:
+                typeof data?.source === 'string'
+                    ? data.source
+                    : '',
+            line:
+                Number.isFinite(
+                    Number(data?.line)
+                )
+                    ? Number(data.line)
+                    : 0,
+            column:
+                Number.isFinite(
+                    Number(data?.column)
+                )
+                    ? Number(data.column)
+                    : 0,
+            messageHash:
+                typeof data?.messageHash === 'string'
+                    ? data.messageHash
                     : ''
         }
     );
@@ -615,12 +845,25 @@ function installOperationalErrorTelemetry() {
                 return;
             }
 
+            const diagnostics =
+                createClientErrorDiagnosticData(
+                    event?.error,
+                    {
+                        phase: 'runtime',
+                        source: event?.filename,
+                        line: event?.lineno,
+                        column: event?.colno,
+                        message: event?.message
+                    }
+                );
+
             trackOperationalFailure(
                 'client-error',
                 {
                     area: 'window',
                     type: 'runtime',
-                    code: 'uncaught-error'
+                    code: 'uncaught-error',
+                    ...diagnostics
                 }
             );
         },
@@ -629,13 +872,32 @@ function installOperationalErrorTelemetry() {
 
     window.addEventListener(
         'unhandledrejection',
-        () => {
+        event => {
+            const reason =
+                event?.reason;
+
+            const diagnostics =
+                createClientErrorDiagnosticData(
+                    reason,
+                    {
+                        phase: 'promise',
+                        message:
+                            reason?.message ??
+                            (
+                                typeof reason === 'string'
+                                    ? reason
+                                    : ''
+                            )
+                    }
+                );
+
             trackOperationalFailure(
                 'client-error',
                 {
                     area: 'window',
                     type: 'promise',
-                    code: 'unhandled-rejection'
+                    code: 'unhandled-rejection',
+                    ...diagnostics
                 }
             );
         }
@@ -664,6 +926,29 @@ function classifyLcpElement(element) {
     return 'other';
 }
 
+function classifyLcpSelector(element) {
+    if (
+        !element ||
+        typeof element.closest !== 'function'
+    ) {
+        return 'unknown';
+    }
+
+    if (element.closest('.motd')) return '.motd';
+    if (element.closest('.solution-result, .result')) return '.result';
+    if (element.closest('.saved-targets')) return '.saved-targets';
+    if (element.closest('header')) return 'header';
+    if (element.closest('main aside')) return 'main-aside';
+    if (element.closest('.workspace')) return '.workspace';
+
+    return String(
+        element.tagName ||
+        'unknown'
+    )
+        .toLowerCase()
+        .slice(0, 24);
+}
+
 function lcpSizeBucket(size) {
     const value = Number(size) || 0;
     if (value < 50000) return 'lt-50k';
@@ -679,18 +964,46 @@ function reportSlowLcp(reason) {
     analyticsLcpReported = true;
     analyticsLcpObserver?.disconnect();
 
-    const navigation = performance.getEntriesByType('navigation')[0];
+    const navigation =
+        performance.getEntriesByType(
+            'navigation'
+        )[0];
+    const firstContentfulPaint =
+        performance.getEntriesByName(
+            'first-contentful-paint'
+        )[0];
     const connection = navigator.connection;
+    const ttfbMs =
+        Math.round(
+            Number(
+                navigation?.responseStart
+            ) || 0
+        );
+    const fcpMs =
+        Math.round(
+            Number(
+                firstContentfulPaint?.startTime
+            ) || 0
+        );
 
     trackAnalytics(`lcp-slow-${lcp.kind}`, {
         kind: lcp.kind,
         tag: lcp.tag,
+        selector: lcp.selector,
         lcpMs: lcp.lcpMs,
+        ttfbMs,
+        fcpMs,
+        afterTtfbMs:
+            Math.max(
+                0,
+                lcp.lcpMs - ttfbMs
+            ),
         renderMs: lcp.renderMs,
         loadMs: lcp.loadMs,
         size: lcp.size,
         motd: lcp.motd,
         map: typeof S === 'object' && S && typeof S.map === 'string' ? S.map : '',
+        weapon: typeof S === 'object' && S && typeof S.weapon === 'string' ? S.weapon : '',
         reason,
         connection: typeof connection?.effectiveType === 'string' ? connection.effectiveType : '',
         navigation: typeof navigation?.type === 'string' ? navigation.type : ''
@@ -712,6 +1025,7 @@ function installLcpDiagnosticTelemetry() {
                 analyticsLcpLatest = {
                     kind: classifyLcpElement(element),
                     tag: String(element?.tagName || 'unknown').toLowerCase().slice(0, 16),
+                    selector: classifyLcpSelector(element),
                     lcpMs: Math.round(Number(entry.startTime) || 0),
                     renderMs: Math.round(Number(entry.renderTime) || 0),
                     loadMs: Math.round(Number(entry.loadTime) || 0),

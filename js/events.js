@@ -17,6 +17,107 @@ function bindThemeToggle() {
     );
 }
 
+function setPointPlacementMode(mode) {
+    if (mode !== 'origin' && mode !== 'target') {
+        return false;
+    }
+
+    S.mode = mode;
+
+    $('originMode')
+        ?.classList.toggle(
+            'active',
+            mode === 'origin'
+        );
+
+    $('targetMode')
+        ?.classList.toggle(
+            'active',
+            mode === 'target'
+        );
+
+    return true;
+}
+
+function isAppShortcutInputTarget(target) {
+    if (!target || target === document.body) {
+        return false;
+    }
+
+    if (target.isContentEditable) {
+        return true;
+    }
+
+    return [
+        'INPUT',
+        'TEXTAREA',
+        'SELECT'
+    ].includes(
+        String(target.tagName || '')
+            .toUpperCase()
+    );
+}
+
+function handleAppShortcut(event) {
+    if (
+        event.defaultPrevented ||
+        event.ctrlKey ||
+        event.metaKey ||
+        event.altKey ||
+        event.repeat ||
+        isAppShortcutInputTarget(event.target)
+    ) {
+        return false;
+    }
+
+    const key =
+        typeof getKeyboardShortcutKey === 'function'
+            ? getKeyboardShortcutKey(event)
+            : String(event.key || '').toLowerCase();
+
+    if (key === 'q') {
+        setPointPlacementMode(
+            S.mode === 'origin'
+                ? 'target'
+                : 'origin'
+        );
+        return true;
+    }
+
+    if (key === 'tab') {
+        /*
+         * Preserve normal keyboard focus navigation while the user is on an
+         * interactive control. Tab acts as the sidebar shortcut only from the
+         * map canvas or an unfocused page body.
+         */
+        if (
+            event.target !== document.body &&
+            event.target !== c
+        ) {
+            return false;
+        }
+
+        if (
+            !document.body.classList.contains('mobile-app') &&
+            typeof toggleSidebar === 'function'
+        ) {
+            toggleSidebar();
+            return true;
+        }
+    }
+
+    if (
+        key === 't' &&
+        !document.body.classList.contains('mobile-app') &&
+        typeof toggleDesktopSavedTargetsCollapsed === 'function'
+    ) {
+        toggleDesktopSavedTargetsCollapsed();
+        return true;
+    }
+
+    return false;
+}
+
 function bindEvents() {
 
     /*
@@ -243,40 +344,12 @@ function bindEvents() {
 
     $('originMode').addEventListener(
         'click',
-        () => {
-
-            S.mode =
-                'origin';
-
-            $('originMode')
-                .classList.add(
-                'active'
-            );
-
-            $('targetMode')
-                .classList.remove(
-                'active'
-            );
-        }
+        () => setPointPlacementMode('origin')
     );
 
     $('targetMode').addEventListener(
         'click',
-        () => {
-
-            S.mode =
-                'target';
-
-            $('targetMode')
-                .classList.add(
-                'active'
-            );
-
-            $('originMode')
-                .classList.remove(
-                'active'
-            );
-        }
+        () => setPointPlacementMode('target')
     );
 
     ['ox', 'oy'].forEach(
@@ -543,58 +616,24 @@ function bindEvents() {
                 return;
             }
 
-            const d1 =
-                Math.hypot(
-                    p.x -
-                    S.origin.x,
-
-                    p.y -
-                    S.origin.y
-                );
-
-            const d2 =
-                Math.hypot(
-                    p.x -
-                    S.target.x,
-
-                    p.y -
-                    S.target.y
-                );
-
-            const pointHitThreshold =
-                metersToWorldDistance(300);
-
             /*
-             * Locked points are not hit-test targets. A click beside a
-             * locked gun/target must remain available for placing the active
-             * unlocked point instead of being swallowed by the nearer lock.
+             * Point placement always follows the explicitly selected mode.
+             * The old 300 m nearest-point hit test could move the other
+             * marker when the user was trying to place a new point nearby.
+             * Existing points can still be repositioned by selecting their
+             * mode first and dragging/placing normally.
              */
-            const nearestUnlockedPoint =
-                getNearestUnlockedMapPoint(
-                    d1,
-                    d2,
-                    pointHitThreshold
-                );
-
             if (
-                nearestUnlockedPoint
+                isPointMapLocked(
+                    S.mode
+                )
             ) {
-                drag =
-                    nearestUnlockedPoint;
-
-            } else {
-                if (
-                    isPointMapLocked(
-                        S.mode
-                    )
-                ) {
-                    drag = null;
-                    updateCursor(e);
-                    return;
-                }
-
-                drag = S.mode;
+                drag = null;
+                updateCursor(e);
+                return;
             }
+
+            drag = S.mode;
 
             pushMapToolHistory();
 
@@ -835,6 +874,11 @@ function bindEvents() {
     window.addEventListener(
         'keydown',
         e => {
+            if (handleAppShortcut(e)) {
+                e.preventDefault();
+                return;
+            }
+
             if (handleMapToolShortcut(e)) {
                 e.preventDefault();
                 return;

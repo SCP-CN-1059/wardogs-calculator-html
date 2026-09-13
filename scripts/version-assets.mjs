@@ -31,6 +31,9 @@ const dist = join(
 const UMAMI_PRODUCTION_DOMAIN =
     'wardogs-artillery.com';
 
+const UMAMI_EA_TAG_PREFIX =
+    'ea-build-';
+
 async function listFilesRecursive(directory) {
     const entries = await readdir(
         directory,
@@ -187,7 +190,13 @@ function versionHtml(
  *
  * `data-performance` enables Umami's real-user performance measurements.
  */
-function configureProductionAnalytics(html) {
+function configureProductionAnalytics(
+    html,
+    version
+) {
+    const releaseTag =
+        `${UMAMI_EA_TAG_PREFIX}${version}`;
+
     return html.replace(
         /<script\b(?=[^>]*\bsrc=["']https:\/\/cloud\.umami\.is\/script\.js["'])[^>]*><\/script>/gi,
         tag => {
@@ -200,6 +209,10 @@ function configureProductionAnalytics(html) {
                     .replace(
                         /\sdata-performance=(["'])[^"']*\1/gi,
                         ''
+                    )
+                    .replace(
+                        /\sdata-tag=(["'])[^"']*\1/gi,
+                        ''
                     );
 
             configured =
@@ -207,7 +220,8 @@ function configureProductionAnalytics(html) {
                     /\ssrc=/i,
                     (
                         ` data-domains="${UMAMI_PRODUCTION_DOMAIN}"` +
-                        ' data-performance="true" src='
+                        ' data-performance="true"' +
+                        ` data-tag="${releaseTag}" src=`
                     )
                 );
 
@@ -353,7 +367,8 @@ for (const file of htmlFiles) {
 
     const analyticsConfigured =
         configureProductionAnalytics(
-            html
+            html,
+            version
         );
 
     if (
@@ -383,4 +398,8 @@ console.log(
 
 console.log(
     `Configured production Umami analytics on ${analyticsConfiguredPages} HTML files`
+);
+
+console.log(
+    `Umami Early Access release tag: ${UMAMI_EA_TAG_PREFIX}${version}`
 );

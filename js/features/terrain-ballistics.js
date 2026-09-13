@@ -287,14 +287,96 @@
         return text.terrainStatus.replace('{dz}', dz);
     }
 
-    async function fetchJson(url) {
-        const response = await fetch(url);
+    const TERRAIN_FETCH_ATTEMPTS = 2;
+    const TERRAIN_RETRY_DELAY_MS = 500;
 
-        if (!response.ok) {
-            throw new Error(
-                `${response.status} ${response.statusText} for ${url}`
-            );
+    function waitForTerrainRetry() {
+        return new Promise(
+            resolve =>
+                window.setTimeout(
+                    resolve,
+                    TERRAIN_RETRY_DELAY_MS
+                )
+        );
+    }
+
+    function isRetryableTerrainStatus(status) {
+        return (
+            status === 408 ||
+            status === 425 ||
+            status === 429 ||
+            status >= 500
+        );
+    }
+
+    async function fetchTerrainResource(
+        url,
+        options = undefined
+    ) {
+        let lastError = null;
+
+        for (
+            let attempt = 1;
+            attempt <= TERRAIN_FETCH_ATTEMPTS;
+            attempt++
+        ) {
+            try {
+                const response =
+                    await fetch(
+                        url,
+                        options
+                    );
+
+                if (response.ok) {
+                    return response;
+                }
+
+                const error = new Error(
+                    `${response.status} ${response.statusText} for ${url}`
+                );
+
+                if (
+                    !isRetryableTerrainStatus(
+                        response.status
+                    )
+                ) {
+                    error.retryable = false;
+                    throw error;
+                }
+
+                if (
+                    attempt >= TERRAIN_FETCH_ATTEMPTS
+                ) {
+                    throw error;
+                }
+
+                lastError = error;
+
+            } catch (error) {
+                lastError = error;
+
+                if (
+                    error?.retryable === false ||
+                    attempt >= TERRAIN_FETCH_ATTEMPTS
+                ) {
+                    throw error;
+                }
+            }
+
+            await waitForTerrainRetry();
         }
+
+        throw lastError ||
+            new Error(
+                `Failed to load terrain resource ${url}`
+            );
+    }
+
+    async function fetchJson(url) {
+        const response =
+            await fetchTerrainResource(
+                url
+            );
 
         return response.json();
     }
@@ -708,13 +790,13 @@
         }
 
         const promise = (async () => {
-            const response = await fetch(resolveChunkUrl(terrain, entry));
-
-            if (!response.ok) {
-                throw new Error(
-                    `${response.status} ${response.statusText} loading terrain chunk ${terrain.mapId}:${key}`
+            const response =
+                await fetchTerrainResource(
+                    resolveChunkUrl(
+                        terrain,
+                        entry
+                    )
                 );
-            }
 
             const buffer = await response.arrayBuffer();
             const expectedBytes = Number(entry.bytes || 0);

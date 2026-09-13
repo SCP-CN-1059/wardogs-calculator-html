@@ -49,77 +49,115 @@ async function loadRuntimeScript({
     selector,
     dataAttribute,
     url,
-    ready
+    ready,
+    attempts = 1,
+    retryDelay = 500
 }) {
-    await new Promise((resolve, reject) => {
-        const existing =
-            document.querySelector(
-                selector
-            );
+    const loadOnce = () =>
+        new Promise((resolve, reject) => {
+            const existing =
+                document.querySelector(
+                    selector
+                );
 
-        if (existing) {
-            if (
-                typeof ready ===
-                    'function' &&
-                ready()
-            ) {
-                resolve();
+            if (existing) {
+                if (
+                    typeof ready ===
+                        'function' &&
+                    ready()
+                ) {
+                    resolve();
+                    return;
+                }
+
+                existing.addEventListener(
+                    'load',
+                    resolve,
+                    {
+                        once: true
+                    }
+                );
+
+                existing.addEventListener(
+                    'error',
+                    () => {
+                        existing.remove();
+                        reject(
+                            new Error(
+                                `Failed to load runtime ${url}`
+                            )
+                        );
+                    },
+                    {
+                        once: true
+                    }
+                );
+
                 return;
             }
 
-            existing.addEventListener(
-                'load',
-                resolve,
-                {
-                    once: true
-                }
-            );
+            const script =
+                document.createElement(
+                    'script'
+                );
 
-            existing.addEventListener(
-                'error',
-                () => reject(
-                    new Error(
-                        `Failed to load runtime ${url}`
-                    )
-                ),
-                {
-                    once: true
-                }
-            );
+            script.src =
+                versionRuntimeAsset(
+                    url
+                );
 
+            script.async = false;
+
+            script.dataset[
+                dataAttribute
+            ] = '1';
+
+            script.onload =
+                resolve;
+
+            script.onerror =
+                () => {
+                    script.remove();
+                    reject(
+                        new Error(
+                            `Failed to load runtime ${url}`
+                        )
+                    );
+                };
+
+            document.head.appendChild(
+                script
+            );
+        });
+
+    let lastError = null;
+
+    for (
+        let attempt = 1;
+        attempt <= attempts;
+        attempt++
+    ) {
+        try {
+            await loadOnce();
             return;
+        } catch (error) {
+            lastError = error;
+
+            if (attempt >= attempts) {
+                throw error;
+            }
+
+            await new Promise(
+                resolve =>
+                    window.setTimeout(
+                        resolve,
+                        retryDelay
+                    )
+            );
         }
+    }
 
-        const script =
-            document.createElement(
-                'script'
-            );
-
-        script.src =
-            versionRuntimeAsset(
-                url
-            );
-
-        script.async = false;
-
-        script.dataset[
-            dataAttribute
-        ] = '1';
-
-        script.onload =
-            resolve;
-
-        script.onerror =
-            () => reject(
-                new Error(
-                    `Failed to load runtime ${url}`
-                )
-            );
-
-        document.head.appendChild(
-            script
-        );
-    });
+    throw lastError;
 }
 
 let terrainRuntimePromise = null;
@@ -136,7 +174,9 @@ async function loadTerrainBallisticsRuntime() {
             ready:
                 () =>
                     typeof initTerrainBallistics ===
-                    'function'
+                    'function',
+            attempts: 2,
+            retryDelay: 500
         });
 
         if (
@@ -161,7 +201,9 @@ async function loadTerrainBallisticsRuntime() {
             ready:
                 () =>
                     typeof initExperimentalTerrainCorrection ===
-                    'function'
+                    'function',
+            attempts: 2,
+            retryDelay: 500
         });
 
         if (
@@ -285,12 +327,24 @@ async function loadLobbyRuntime() {
             typeof trackOperationalFailure ===
                 'function'
         ) {
+            const diagnostics =
+                typeof createClientErrorDiagnosticData ===
+                    'function'
+                    ? createClientErrorDiagnosticData(
+                        error,
+                        {
+                            phase: 'lobby-runtime'
+                        }
+                    )
+                    : {};
+
             trackOperationalFailure(
                 'client-error',
                 {
                     area: 'lobby',
                     type: 'runtime',
-                    code: 'load'
+                    code: 'load',
+                    ...diagnostics
                 }
             );
         }
@@ -443,12 +497,24 @@ async function init() {
             typeof trackOperationalFailure ===
                 'function'
         ) {
+            const diagnostics =
+                typeof createClientErrorDiagnosticData ===
+                    'function'
+                    ? createClientErrorDiagnosticData(
+                        error,
+                        {
+                            phase: 'app-init'
+                        }
+                    )
+                    : {};
+
             trackOperationalFailure(
                 'client-error',
                 {
                     area: 'app',
                     type: 'init',
-                    code: 'failed'
+                    code: 'failed',
+                    ...diagnostics
                 }
             );
         }

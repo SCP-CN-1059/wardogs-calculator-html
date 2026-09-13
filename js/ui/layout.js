@@ -1815,6 +1815,24 @@ function setDesktopSavedTargetsCollapsed(
     }
 }
 
+function toggleDesktopSavedTargetsCollapsed() {
+
+    const panel =
+        document.querySelector(
+            '.workspace .saved-targets'
+        );
+
+    if (!panel) {
+        return;
+    }
+
+    setDesktopSavedTargetsCollapsed(
+        !panel.classList.contains(
+            'is-collapsed'
+        )
+    );
+}
+
 function initDesktopSavedTargetsCollapse() {
 
     const mobileApp =

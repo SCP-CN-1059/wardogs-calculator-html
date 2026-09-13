@@ -141,6 +141,8 @@ function getTileURL(
 }
 
 const TILE_REQUEST_CONCURRENCY = 8;
+const TILE_REQUEST_ATTEMPTS = 2;
+const TILE_RETRY_DELAY_MS = 450;
 
 const TILE_LOAD_QUEUE = [];
 
@@ -155,13 +157,8 @@ function sortTileLoadQueue() {
     );
 }
 
-function finishTileRequest(
-    tile,
-    failed
-) {
+function releaseTileRequestSlot(tile) {
     tile.loading = false;
-    tile.loaded = !failed;
-    tile.failed = failed;
 
     TILE_ACTIVE_REQUESTS =
         Math.max(
@@ -170,7 +167,61 @@ function finishTileRequest(
         );
 
     pumpTileLoadQueue();
+}
+
+function finishTileRequest(
+    tile,
+    failed
+) {
+    releaseTileRequestSlot(
+        tile
+    );
+
+    tile.loaded = !failed;
+    tile.failed = failed;
+    tile.retryPending = false;
+
     draw();
+}
+
+function scheduleTileRetry(tile) {
+    releaseTileRequestSlot(
+        tile
+    );
+
+    tile.retryPending = true;
+    tile.image = null;
+
+    /*
+     * Redraw immediately so a cached lower-resolution ancestor remains
+     * visible while the retry waits. The redraw also refreshes
+     * lastSeenEpoch for tiles that are still in the current viewport.
+     */
+    draw();
+
+    window.setTimeout(
+        () => {
+            tile.retryPending = false;
+
+            if (
+                tile.loaded ||
+                tile.failed
+            ) {
+                return;
+            }
+
+            const stillNeeded =
+                tile.lastSeenEpoch >=
+                    TILE_QUEUE_EPOCH - 1;
+
+            if (stillNeeded) {
+                queueTileLoad(
+                    tile
+                );
+            }
+        },
+        TILE_RETRY_DELAY_MS
+    );
 }
 
 function startTileRequest(tile) {
@@ -202,6 +253,9 @@ function startTileRequest(tile) {
     tile.image = image;
     tile.loading = true;
     tile.queued = false;
+    tile.retryPending = false;
+    tile.attempts =
+        (tile.attempts || 0) + 1;
 
     TILE_ACTIVE_REQUESTS++;
 
@@ -215,8 +269,18 @@ function startTileRequest(tile) {
 
     image.onerror =
         () => {
+            if (
+                tile.attempts <
+                    TILE_REQUEST_ATTEMPTS
+            ) {
+                scheduleTileRetry(
+                    tile
+                );
+                return;
+            }
+
             console.warn(
-                `Failed to load tile: ${getTileURL(
+                `Failed to load tile after retry: ${getTileURL(
                     map,
                     zoom,
                     x,
@@ -234,7 +298,7 @@ function startTileRequest(tile) {
                         area: 'map',
                         type: 'tile',
                         map: map.id,
-                        code: 'image-load'
+                        code: 'image-load-after-retry'
                     }
                 );
             }
@@ -267,7 +331,8 @@ function pumpTileLoadQueue() {
             !tile ||
             tile.loaded ||
             tile.failed ||
-            tile.loading
+            tile.loading ||
+            tile.retryPending
         ) {
             continue;
         }
@@ -283,7 +348,8 @@ function queueTileLoad(tile) {
         tile.loaded ||
         tile.failed ||
         tile.loading ||
-        tile.queued
+        tile.queued ||
+        tile.retryPending
     ) {
         return;
     }
@@ -320,10 +386,12 @@ function loadTile(
         const cached =
             TILE_CACHE.get(key);
 
+        cached.lastSeenEpoch =
+            TILE_QUEUE_EPOCH;
+
         if (
             !cached.loaded &&
             !cached.failed &&
-            !cached.loading &&
             Number.isFinite(priority) &&
             priority <
                 cached.priority
@@ -332,6 +400,18 @@ function loadTile(
                 priority;
 
             sortTileLoadQueue();
+        }
+
+        if (
+            !cached.loaded &&
+            !cached.failed &&
+            !cached.loading &&
+            !cached.queued &&
+            !cached.retryPending
+        ) {
+            queueTileLoad(
+                cached
+            );
         }
 
         return cached;
@@ -343,6 +423,10 @@ function loadTile(
         failed: false,
         loading: false,
         queued: false,
+        retryPending: false,
+        attempts: 0,
+        lastSeenEpoch:
+            TILE_QUEUE_EPOCH,
         priority:
             Number.isFinite(priority)
                 ? priority

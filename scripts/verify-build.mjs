@@ -36,6 +36,11 @@ for (const path of htmlFiles) {
     assert.match(html, /https:\/\/lobby\.wardogs-artillery\.com/, `${page}: lobby is not allowed by CSP`);
     assert.match(html, /https:\/\/challenges\.cloudflare\.com/, `${page}: Turnstile is not allowed by CSP`);
     assert.match(html, /https:\/\/gateway\.umami\.is/, `${page}: Umami gateway is not allowed by CSP`);
+    assert.match(
+        html,
+        /data-tag="ea-build-[a-f0-9]{12}"/,
+        `${page}: Umami Early Access build tag is missing`
+    );
     assert.doesNotMatch(html, /Content-Security-Policy[^>]+localhost/i, `${page}: development origin leaked into CSP`);
 }
 
