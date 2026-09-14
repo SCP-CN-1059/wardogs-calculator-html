@@ -211,8 +211,8 @@ async function loadMaps() {
         );
     }
 
-    const loaded =
-        await Promise.all(
+    const settled =
+        await Promise.allSettled(
             files.map(
                 async item => {
 
@@ -251,10 +251,43 @@ async function loadMaps() {
             )
         );
 
+    const loaded =
+        settled
+            .filter(
+                result =>
+                    result.status ===
+                        'fulfilled' &&
+                    result.value
+            )
+            .map(
+                result =>
+                    result.value
+            );
+
+    settled
+        .filter(
+            result =>
+                result.status ===
+                'rejected'
+        )
+        .forEach(
+            result => {
+                console.warn(
+                    'A map definition could not be loaded; continuing with the remaining maps.',
+                    result.reason
+                );
+            }
+        );
+
+    if (!loaded.length) {
+        throw new Error(
+            'No map definitions could be loaded'
+        );
+    }
+
     MAPS = {};
 
     loaded
-        .filter(Boolean)
         .forEach(
             map => {
 

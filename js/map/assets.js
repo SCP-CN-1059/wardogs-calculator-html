@@ -85,10 +85,27 @@ function normalizeMarkerAsset(
 
 async function loadMapAssets() {
 
-    const data =
-        await fetchJSON(
-            'maps/assets.json'
+    let data = null;
+
+    try {
+        data =
+            await fetchJSON(
+                'maps/assets.json'
+            );
+    } catch (error) {
+        /*
+         * Marker artwork is optional. If the registry is still unavailable
+         * after fetchJSON() exhausts its retry, keep the calculator usable
+         * without user-placeable marker icons.
+         */
+        MAP_ASSETS = {};
+
+        console.warn(
+            'Map marker assets unavailable; continuing without marker assets.',
+            error
         );
+        return;
+    }
 
     const source =
         data &&

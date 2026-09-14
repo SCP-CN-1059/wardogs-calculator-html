@@ -643,15 +643,31 @@ function getMobileSheetClosedTranslate() {
         document.body
     );
 
+    const sheetStyles =
+        getComputedStyle(
+            sheet
+        );
+
     const peek = parseFloat(
         styles.getPropertyValue(
             '--mobile-sheet-peek'
         )
     ) || 92;
 
+    /*
+     * The closed sheet keeps the iPhone safe area visible below the tabs,
+     * matching the CSS transform and avoiding controls against rounded edges.
+     */
+    const bottomSafeSpacing =
+        parseFloat(
+            sheetStyles.paddingBottom
+        ) || 0;
+
     return Math.max(
         0,
-        sheet.getBoundingClientRect().height - peek
+        sheet.getBoundingClientRect().height -
+        peek -
+        bottomSafeSpacing
     );
 }
 

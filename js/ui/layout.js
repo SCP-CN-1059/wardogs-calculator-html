@@ -1200,8 +1200,8 @@ function initMobileSideMenu() {
 
     menu.append(
         menuHeader,
-        appearanceSection,
         languageSection,
+        appearanceSection,
         linksSection,
         supportSection,
         footer

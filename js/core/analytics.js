@@ -668,7 +668,18 @@ function trackOperationalFailure(
             messageHash:
                 typeof data?.messageHash === 'string'
                     ? data.messageHash
-                    : ''
+                    : '',
+            attempts:
+                Number.isFinite(
+                    Number(data?.attempts)
+                )
+                    ? Math.max(
+                        0,
+                        Math.round(
+                            Number(data.attempts)
+                        )
+                    )
+                    : 0
         }
     );
 }

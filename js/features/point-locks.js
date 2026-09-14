@@ -45,11 +45,13 @@ function updatePointLocksUI() {
             const modeButton = $(modeId);
 
             if (button) {
-                button.textContent = tr(
+                const actionLabel = tr(
                     locked
                         ? 'unlockPosition'
                         : 'lockPosition'
                 );
+
+                button.textContent = '';
 
                 button.classList.toggle(
                     'active',
@@ -61,6 +63,11 @@ function updatePointLocksUI() {
                     locked
                         ? 'true'
                         : 'false'
+                );
+
+                button.setAttribute(
+                    'aria-label',
+                    actionLabel
                 );
 
                 button.title = tr(

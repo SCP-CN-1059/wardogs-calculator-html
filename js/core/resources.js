@@ -2,6 +2,9 @@
    RESOURCES
    ========================= */
 
+const STATIC_JSON_FETCH_ATTEMPTS = 2;
+const STATIC_JSON_RETRY_DELAY = 500;
+
 function resourceURL(path) {
     return new URL(
         path,
@@ -65,6 +68,84 @@ function versionStaticResource(url) {
     }
 }
 
+function classifyStaticJsonResource(path) {
+    const normalized =
+        String(path || '')
+            .split(/[?#]/, 1)[0]
+            .replace(/^\.\//, '')
+            .toLowerCase();
+
+    const fixed = {
+        'config/app.json': 'app-config',
+        'data/weapons.json': 'weapons',
+        'locales/index.json': 'locales-index',
+        'maps/index.json': 'maps-index',
+        'maps/assets.json': 'map-assets'
+    };
+
+    if (fixed[normalized]) {
+        return fixed[normalized];
+    }
+
+    const localeMatch =
+        normalized.match(
+            /^locales\/([^/]+)\.json$/
+        );
+
+    if (localeMatch) {
+        return `locale-${localeMatch[1]}`
+            .slice(0, 64);
+    }
+
+    const mapMatch =
+        normalized.match(
+            /^maps\/([^/]+)\.json$/
+        );
+
+    if (mapMatch) {
+        return `map-${mapMatch[1]}`
+            .slice(0, 64);
+    }
+
+    return 'static-json';
+}
+
+function isRetryableStaticJsonFailure(code) {
+    if (code === 'network') {
+        return true;
+    }
+
+    const match =
+        String(code || '')
+            .match(/^http-(\d{3})$/);
+
+    if (!match) {
+        return false;
+    }
+
+    const status =
+        Number(match[1]);
+
+    return (
+        status === 408 ||
+        status === 429 ||
+        (
+            status >= 500 &&
+            status <= 599
+        )
+    );
+}
+
+function waitForStaticJsonRetry() {
+    return new Promise(
+        resolve =>
+            window.setTimeout(
+                resolve,
+                STATIC_JSON_RETRY_DELAY
+            )
+    );
+}
+
 async function fetchJSON(path) {
 
     const resource =
@@ -88,72 +169,101 @@ async function fetchJSON(path) {
             'maps/'
         );
 
-    let failureCode =
-        'network';
+    const resourceId =
+        classifyStaticJsonResource(
+            normalizedPath
+        );
 
-    try {
-        const response =
-            await fetch(
-                url,
-                {
-                    /*
-                     * Production JSON URLs carry the current build fingerprint,
-                     * so cached data is invalidated automatically on deploy.
-                     * Keep no-cache for local/dev builds with no fingerprint.
-                     */
-                    cache:
-                        resource.versioned
-                            ? 'force-cache'
-                            : 'no-cache'
-                }
-            );
+    let lastError = null;
+    let failureCode = 'network';
 
-        if (!response.ok) {
+    for (
+        let attempt = 1;
+        attempt <= STATIC_JSON_FETCH_ATTEMPTS;
+        attempt++
+    ) {
+        failureCode = 'network';
+
+        try {
+            const response =
+                await fetch(
+                    url,
+                    {
+                        /*
+                         * Production JSON URLs carry the current build fingerprint,
+                         * so cached data is invalidated automatically on deploy.
+                         * Keep no-cache for local/dev builds with no fingerprint.
+                         */
+                        cache:
+                            resource.versioned
+                                ? 'force-cache'
+                                : 'no-cache'
+                    }
+                );
+
+            if (!response.ok) {
+                failureCode =
+                    `http-${response.status}`;
+
+                throw new Error(
+                    `Failed to load ${url}: ${response.status} ${response.statusText}`
+                );
+            }
+
             failureCode =
-                `http-${response.status}`;
+                'decode';
 
-            throw new Error(
-                `Failed to load ${url}: ${response.status} ${response.statusText}`
-            );
-        }
+            return await response.json();
 
-        failureCode =
-            'decode';
+        } catch (error) {
+            lastError = error;
 
-        return await response.json();
-
-    } catch (error) {
-        if (
-            typeof trackOperationalFailure ===
-                'function'
-        ) {
-            const mapId =
-                mapMatch &&
-                ![
-                    'index',
-                    'assets'
-                ].includes(
-                    mapMatch[1].toLowerCase()
+            if (
+                attempt < STATIC_JSON_FETCH_ATTEMPTS &&
+                isRetryableStaticJsonFailure(
+                    failureCode
                 )
-                    ? mapMatch[1]
-                    : '';
+            ) {
+                await waitForStaticJsonRetry();
+                continue;
+            }
 
-            trackOperationalFailure(
-                isMapResource
-                    ? 'map-load-failed'
-                    : 'asset-load-failed',
-                {
-                    area:
-                        isMapResource
-                            ? 'maps'
-                            : 'resources',
-                    type: 'json',
-                    map: mapId,
-                    code: failureCode
-                }
-            );
+            if (
+                typeof trackOperationalFailure ===
+                    'function'
+            ) {
+                const mapId =
+                    mapMatch &&
+                    ![
+                        'index',
+                        'assets'
+                    ].includes(
+                        mapMatch[1].toLowerCase()
+                    )
+                        ? mapMatch[1]
+                        : '';
+
+                trackOperationalFailure(
+                    isMapResource
+                        ? 'map-load-failed'
+                        : 'asset-load-failed',
+                    {
+                        area:
+                            isMapResource
+                                ? 'maps'
+                                : 'resources',
+                        type: 'json',
+                        map: mapId,
+                        code: failureCode,
+                        resource: resourceId,
+                        attempts: attempt
+                    }
+                );
+            }
+
+            throw error;
         }
-
-        throw error;
     }
+
+    throw lastError;
 }

@@ -20,6 +20,7 @@
   "artilleryXY": "砲 X / Y",
   "targetXY": "目標 X / Y",
   "result": "計算結果",
+  "mobileInput": "入力",
   "azimuth": "方位角",
   "distance": "距離",
   "meters": "メートル",
@@ -154,5 +155,15 @@
   "lobbyParticipantFallback": "参加者",
   "lobbyRecoveryAvailable": "下に復元用コピーがあります。リロードまでこのタブにのみ保持されます。",
   "lobbyArtilleryShort": "砲",
-  "lobbyTargetShort": "目"
+  "lobbyTargetShort": "目",
+  "authorLabel": "作成者",
+  "communityPartner": "コミュニティパートナー",
+  "footerDisclaimer": "非公式のコミュニティプロジェクトです。BULKHEADおよびWARDOGS開発チームとは提携しておらず、公式な承認も受けていません。",
+  "switchToDarkTheme": "ダークテーマに切り替え",
+  "switchToLightTheme": "ライトテーマに切り替え",
+  "mobileOpenCalculator": "計算機を開く",
+  "mobileCalculatorSections": "計算機のセクション",
+  "zoomOutLabel": "縮小",
+  "zoomInLabel": "拡大",
+  "mobileCloseMenu": "メニューを閉じる"
 }

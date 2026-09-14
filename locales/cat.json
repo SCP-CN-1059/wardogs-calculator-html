@@ -22,6 +22,7 @@
   "artilleryXY": "MEOWTILLERY X / Y",
   "targetXY": "MEOWGET X / Y",
   "result": "MEOW-SULT :P",
+  "mobileInput": "MEOW-PUT :P",
   "azimuth": "MEOWZIMUTH",
   "distance": "MEOWTANCE",
   "meters": "MEOWTERS",
@@ -164,5 +165,17 @@
   "lobbyParticipantFallback": "CAT",
   "lobbyRecoveryAvailable": "A RECOVERY PAW-PY IS BELOW. IT STAYS ONLY IN THIS TAB UNTIL RELOAD.",
   "lobbyArtilleryShort": "M",
-  "lobbyTargetShort": "T"
+  "lobbyTargetShort": "T",
+  "customMapStatus": "CUSTOM MEOWP",
+  "mapLocked": "PRESET MEOWP SELECTED — GRID SIZE IS CAT-LOCKED",
+  "authorLabel": "BY",
+  "communityPartner": "COMMUNITY PAWTNER",
+  "footerDisclaimer": "UNOFFICIAL COMMUNITY CAT PROJECT. NOT AFFILIATED WITH OR ENDORSED BY BULKHEAD OR THE WARDOGS DEVELOPER HUMANS.",
+  "switchToDarkTheme": "SWITCH TO NIGHT-CAT MODE",
+  "switchToLightTheme": "SWITCH TO SUNBEAM MODE",
+  "mobileOpenCalculator": "OPEN CATCULATOR",
+  "mobileCalculatorSections": "CATCULATOR SECTIONS",
+  "zoomOutLabel": "ZOOM OUT",
+  "zoomInLabel": "ZOOM IN",
+  "mobileCloseMenu": "CLOSE MEOWNU"
 }

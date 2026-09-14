@@ -22,6 +22,7 @@
   "artilleryXY": "Artillerie X / Y",
   "targetXY": "Ziel X / Y",
   "result": "Ergebnis",
+  "mobileInput": "Eingabe",
   "azimuth": "AZIMUT",
   "distance": "Entfernung",
   "meters": "Meter",
@@ -105,7 +106,7 @@
   "importTargets": "Importieren",
   "savedTargetsImportSuccess": "Importierte Ziele: {count}",
   "savedTargetsImportInvalid": "Ziele konnten nicht aus dieser Datei importiert werden.",
-  "elevation": "Elevation",
+  "elevation": "Höhenwinkel",
   "lowArc": "Flache Flugbahn",
   "highArc": "Steile Flugbahn",
   "noFiringSolution": "Keine Feuerlösung",
@@ -158,5 +159,15 @@
   "lobbyParticipantFallback": "Teilnehmer",
   "lobbyRecoveryAvailable": "Unten ist eine Sicherung verfügbar. Sie bleibt nur in diesem Tab bis zum Neuladen erhalten.",
   "lobbyArtilleryShort": "A",
-  "lobbyTargetShort": "Z"
+  "lobbyTargetShort": "Z",
+  "authorLabel": "von",
+  "communityPartner": "Community-Partner",
+  "footerDisclaimer": "Inoffizielles Community-Projekt. Nicht mit BULKHEAD oder dem WARDOGS-Entwicklerteam verbunden und nicht von ihnen unterstützt.",
+  "switchToDarkTheme": "Zum dunklen Design wechseln",
+  "switchToLightTheme": "Zum hellen Design wechseln",
+  "mobileOpenCalculator": "Rechner öffnen",
+  "mobileCalculatorSections": "Bereiche des Rechners",
+  "zoomOutLabel": "Verkleinern",
+  "zoomInLabel": "Vergrößern",
+  "mobileCloseMenu": "Menü schließen"
 }

@@ -39,6 +39,21 @@ function setPointPlacementMode(mode) {
     return true;
 }
 
+function swapArtilleryAndTargetPoints() {
+    pushMapToolHistory();
+
+    const oldOrigin =
+        S.origin;
+
+    S.origin =
+        S.target;
+
+    S.target =
+        oldOrigin;
+
+    inputs();
+}
+
 function isAppShortcutInputTarget(target) {
     if (!target || target === document.body) {
         return false;
@@ -64,8 +79,7 @@ function handleAppShortcut(event) {
         event.ctrlKey ||
         event.metaKey ||
         event.altKey ||
-        event.repeat ||
-        isAppShortcutInputTarget(event.target)
+        event.repeat
     ) {
         return false;
     }
@@ -74,6 +88,29 @@ function handleAppShortcut(event) {
         typeof getKeyboardShortcutKey === 'function'
             ? getKeyboardShortcutKey(event)
             : String(event.key || '').toLowerCase();
+
+    /*
+     * Plain Tab is an application shortcut on desktop. Handle it before the
+     * editable-control guard so focused buttons/selects do not steal it for
+     * focus navigation. Shift+Tab keeps the browser's normal focus behavior.
+     */
+    if (
+        key === 'tab' &&
+        !event.shiftKey &&
+        !document.body.classList.contains('mobile-app') &&
+        typeof toggleSidebar === 'function'
+    ) {
+        toggleSidebar();
+        return true;
+    }
+
+    if (
+        isAppShortcutInputTarget(
+            event.target
+        )
+    ) {
+        return false;
+    }
 
     if (key === 'q') {
         setPointPlacementMode(
@@ -84,26 +121,9 @@ function handleAppShortcut(event) {
         return true;
     }
 
-    if (key === 'tab') {
-        /*
-         * Preserve normal keyboard focus navigation while the user is on an
-         * interactive control. Tab acts as the sidebar shortcut only from the
-         * map canvas or an unfocused page body.
-         */
-        if (
-            event.target !== document.body &&
-            event.target !== c
-        ) {
-            return false;
-        }
-
-        if (
-            !document.body.classList.contains('mobile-app') &&
-            typeof toggleSidebar === 'function'
-        ) {
-            toggleSidebar();
-            return true;
-        }
+    if (key === 'y') {
+        swapArtilleryAndTargetPoints();
+        return true;
     }
 
     if (
@@ -463,21 +483,7 @@ function bindEvents() {
 
     $('swap').addEventListener(
         'click',
-        () => {
-
-            pushMapToolHistory();
-
-            const oldOrigin =
-                S.origin;
-
-            S.origin =
-                S.target;
-
-            S.target =
-                oldOrigin;
-
-            inputs();
-        }
+        swapArtilleryAndTargetPoints
     );
 
     $('clear').addEventListener(

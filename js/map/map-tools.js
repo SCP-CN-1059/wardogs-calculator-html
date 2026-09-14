@@ -1703,8 +1703,10 @@ function handleMapToolShortcut(event) {
     }
 
     if (key === shortcuts.marker) {
-        MAP_TOOL_STATE.tool = 'marker';
-        updateMapToolsUI();
+        /*
+         * Opening the picker is not the same as activating the marker tool.
+         * The tool becomes active only after the user chooses an icon.
+         */
         toggleMapToolMenu('markerPicker');
         return true;
     }
@@ -2226,27 +2228,10 @@ function initMapTools() {
         event => {
             event.stopPropagation();
 
-            if (
-                MAP_TOOL_STATE.tool ===
-                'marker' &&
-                isMapToolMenuOpen(
-                    'markerPicker'
-                )
-            ) {
-                closeMapToolMenus();
-                setMapTool('marker');
-                return;
-            }
-
-            if (
-                MAP_TOOL_STATE.tool !==
-                'marker'
-            ) {
-                MAP_TOOL_STATE.tool =
-                    'marker';
-                updateMapToolsUI();
-            }
-
+            /*
+             * Keep the previously active tool while browsing marker icons.
+             * Selecting an icon commits marker mode in buildMarkerPicker().
+             */
             toggleMapToolMenu(
                 'markerPicker'
             );

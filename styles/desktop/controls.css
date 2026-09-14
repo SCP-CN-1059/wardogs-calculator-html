@@ -372,6 +372,41 @@ button:disabled {
     font-size: 10px;
 }
 
+.point-coordinate-actions .point-lock-button {
+    position: relative;
+    flex: 0 0 30px;
+    width: 30px;
+    min-width: 30px;
+    height: 28px;
+    min-height: 28px;
+    padding: 0;
+    font-size: 0;
+}
+
+.point-coordinate-actions .point-lock-button::before {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: 6px;
+    width: 8px;
+    height: 7px;
+    border: 1.5px solid currentColor;
+    border-bottom: 0;
+    border-radius: 5px 5px 0 0;
+    transform: translateX(-50%);
+}
+
+.point-coordinate-actions .point-lock-button::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: 12px;
+    width: 12px;
+    height: 9px;
+    border: 1.5px solid currentColor;
+    border-radius: 2px;
+    transform: translateX(-50%);
+}
 
 .point-coordinate-actions .point-lock-button.active {
     border-color: var(--accent-border);
