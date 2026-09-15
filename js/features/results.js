@@ -313,6 +313,17 @@ function result() {
     );
 
     if (
+        typeof scheduleAccessibilityResultAnnouncement ===
+            'function'
+    ) {
+        scheduleAccessibilityResultAnnouncement({
+            distanceMeters: dMeters,
+            azimuth: a,
+            inRange
+        });
+    }
+
+    if (
         typeof trackCalculationState ===
         'function'
     ) {

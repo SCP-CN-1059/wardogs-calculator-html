@@ -14,7 +14,16 @@
     "tileSize": 256,
     "minZoom": 0,
     "maxZoom": 7,
-    "extension": "webp"
+    "extension": "webp",
+    "defaultStyle": "grayscale",
+    "styles": {
+      "grayscale": {
+        "path": "https://assets.wardogs-artillery.com/releases/assets-v1/maps/tiles/zestafona"
+      },
+      "color": {
+        "path": "https://assets.wardogs-artillery.com/releases/assets-v1/maps/tiles-color/zestafona"
+      }
+    }
   },
   "markers": [
     {

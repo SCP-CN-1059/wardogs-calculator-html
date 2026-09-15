@@ -2,18 +2,65 @@
    TILE MAP
    ========================= */
 
-function getTileConfig(map) {
+function getMapTileStyleId(map) {
+    const styles =
+        map?.tiles?.styles || {};
+
+    const selected =
+        String(
+            S.mapStyle ||
+            ''
+        );
+
+    if (styles[selected]) {
+        return selected;
+    }
+
+    const configuredDefault =
+        String(
+            map?.tiles?.defaultStyle ||
+            ''
+        );
+
+    if (styles[configuredDefault]) {
+        return configuredDefault;
+    }
+
+    return (
+        Object.keys(styles)[0] ||
+        'grayscale'
+    );
+}
+
+function getTileConfig(
+    map,
+    styleId = getMapTileStyleId(map)
+) {
 
     if (
         !map ||
         !map.tiles ||
-        !isValidTileConfig(map.tiles) ||
         !isValidBounds(map.bounds)
     ) {
         return null;
     }
 
-    return map.tiles;
+    const style =
+        map.tiles.styles?.[styleId];
+
+    const tiles =
+        style
+            ? {
+                ...map.tiles,
+                ...style
+            }
+            : map.tiles;
+
+    if (!isValidTileConfig(tiles)) {
+        return null;
+    }
+
+    return tiles;
 }
 
 
@@ -125,11 +172,15 @@ function getTileURL(
     map,
     zoom,
     x,
-    y
+    y,
+    styleId = getMapTileStyleId(map)
 ) {
 
     const tiles =
-        getTileConfig(map);
+        getTileConfig(
+            map,
+            styleId
+        );
 
     if (!tiles) {
         return null;
@@ -227,6 +278,7 @@ function scheduleTileRetry(tile) {
 function startTileRequest(tile) {
     const {
         map,
+        styleId,
         zoom,
         x,
         y
@@ -284,7 +336,8 @@ function startTileRequest(tile) {
                     map,
                     zoom,
                     x,
-                    y
+                    y,
+                    styleId
                 )}`
             );
 
@@ -298,6 +351,7 @@ function startTileRequest(tile) {
                         area: 'map',
                         type: 'tile',
                         map: map.id,
+                        resource: `tile-${styleId}`,
                         code: 'image-load-after-retry'
                     }
                 );
@@ -314,7 +368,8 @@ function startTileRequest(tile) {
             map,
             zoom,
             x,
-            y
+            y,
+            styleId
         );
 }
 
@@ -372,9 +427,14 @@ function loadTile(
     priority = 0
 ) {
 
+    const styleId =
+        getMapTileStyleId(
+            map
+        );
+
     const key =
         tileKey(
-            map.id,
+            `${map.id}:${styleId}`,
             zoom,
             x,
             y
@@ -433,6 +493,7 @@ function loadTile(
                 : 0,
         request: {
             map,
+            styleId,
             zoom,
             x,
             y
@@ -460,6 +521,11 @@ function findCachedTileAncestor(
     y
 ) {
 
+    const styleId =
+        getMapTileStyleId(
+            map
+        );
+
     for (
         let levels = 1;
         zoom - levels >= tiles.minZoom;
@@ -485,7 +551,7 @@ function findCachedTileAncestor(
         const ancestor =
             TILE_CACHE.get(
                 tileKey(
-                    map.id,
+                    `${map.id}:${styleId}`,
                     zoom - levels,
                     Math.floor(
                         x / scale

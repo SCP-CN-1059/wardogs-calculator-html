@@ -801,6 +801,13 @@ function applyLanguage() {
     }
 
     if (
+        typeof syncAccessibilityLocalization ===
+        'function'
+    ) {
+        syncAccessibilityLocalization();
+    }
+
+    if (
         typeof updateMotdLocalization ===
         'function'
     ) {

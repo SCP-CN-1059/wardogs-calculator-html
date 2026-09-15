@@ -169,5 +169,15 @@
   "mobileCalculatorSections": "Sekcje kalkulatora",
   "zoomOutLabel": "Oddal",
   "zoomInLabel": "Przybliż",
-  "mobileCloseMenu": "Zamknij menu"
+  "mobileCloseMenu": "Zamknij menu",
+  "accessibility": "Dostępność",
+  "accessibilitySettings": "Wyświetlanie i dostępność",
+  "accessibilityTextSize": "Rozmiar tekstu",
+  "accessibilityTextNormal": "Normalny",
+  "accessibilityTextLarge": "Duży",
+  "accessibilityTextExtraLarge": "Bardzo duży",
+  "accessibilityLargerControls": "Większe elementy sterujące",
+  "accessibilityHighContrast": "Wysoki kontrast",
+  "accessibilityReset": "Resetuj",
+  "accessibilityClose": "Zamknij"
 }

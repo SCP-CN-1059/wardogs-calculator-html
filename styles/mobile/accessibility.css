@@ -1,0 +1,190 @@
+/* =========================
+   MOBILE ACCESSIBILITY
+   ========================= */
+
+.mobile-app .mobile-accessibility-button {
+    width: 100%;
+    min-height: 44px;
+    justify-content: flex-start;
+    padding: 10px 12px;
+}
+
+.mobile-app .mobile-side-menu-accessibility .accessibility-launcher-icon {
+    width: 24px;
+    min-width: 24px;
+}
+
+.mobile-app .mobile-brand-copy h1 {
+    font-size: calc(13px * var(--a11y-text-scale));
+}
+
+.mobile-app .mobile-brand-copy > span {
+    font-size: calc(8px * var(--a11y-text-scale));
+}
+
+.mobile-app .mobile-status {
+    font-size: calc(9px * var(--a11y-text-scale));
+}
+
+.mobile-app .mobile-solution-metric > span {
+    font-size: calc(6px * var(--a11y-text-scale));
+}
+
+.mobile-app .mobile-solution-metric > b,
+.mobile-app .mobile-solution-metric-highlight > b {
+    font-size: calc(14px * var(--a11y-result-scale));
+}
+
+.mobile-app .mobile-solution-metric > small {
+    font-size: calc(6px * var(--a11y-text-scale));
+}
+
+.mobile-app .mobile-range-status {
+    font-size: calc(7px * var(--a11y-text-scale));
+}
+
+.mobile-app .mobile-mode-switch button {
+    font-size: calc(12px * var(--a11y-text-scale));
+}
+
+.mobile-app .mobile-tab,
+.mobile-app .mobile-card h2 {
+    font-size: calc(10px * var(--a11y-text-scale));
+}
+
+.mobile-app input,
+.mobile-app select,
+.mobile-app button {
+    font-size: calc(14px * var(--a11y-text-scale));
+}
+
+.mobile-app .mobile-inline-row,
+.mobile-app .saved-target-transfer-status,
+.mobile-app .point-coordinate-actions button {
+    font-size: calc(11px * var(--a11y-text-scale));
+}
+
+.mobile-app .mobile-desktop-link {
+    font-size: calc(12px * var(--a11y-text-scale));
+}
+
+.mobile-app .mobile-partner-link {
+    font-size: calc(10px * var(--a11y-text-scale));
+}
+
+:root[data-a11y-text-size="large"] .mobile-app .mobile-solution-metric > span,
+:root[data-a11y-text-size="large"] .mobile-app .mobile-solution-metric > small {
+    font-size: 8px;
+}
+
+:root[data-a11y-text-size="xl"] .mobile-app .mobile-solution-metric > span,
+:root[data-a11y-text-size="xl"] .mobile-app .mobile-solution-metric > small {
+    font-size: 9px;
+}
+
+:root[data-a11y-text-size="large"] .mobile-app .mobile-range-status {
+    font-size: 9px;
+}
+
+:root[data-a11y-text-size="xl"] .mobile-app .mobile-range-status {
+    font-size: 10px;
+}
+
+:root[data-a11y-large-controls="true"] .mobile-app input,
+:root[data-a11y-large-controls="true"] .mobile-app select,
+:root[data-a11y-large-controls="true"] .mobile-app button,
+:root[data-a11y-large-controls="true"] .mobile-app .mobile-desktop-link {
+    min-height: 48px;
+}
+
+:root[data-a11y-large-controls="true"] .mobile-app .mobile-motd-button,
+:root[data-a11y-large-controls="true"] .mobile-app .mobile-side-menu-toggle,
+:root[data-a11y-large-controls="true"] .mobile-app .theme-toggle,
+:root[data-a11y-large-controls="true"] .mobile-app .language-picker,
+:root[data-a11y-large-controls="true"] .mobile-app .language-picker-button {
+    width: 46px;
+    min-width: 46px;
+    height: 46px;
+    min-height: 46px;
+}
+
+:root[data-a11y-large-controls="true"] .mobile-app .mobile-sheet-handle {
+    min-height: 40px;
+}
+
+@media (max-width: 430px) {
+    :root[data-a11y-text-size="xl"] .mobile-app .mobile-solution-hud {
+        width: min(320px, calc(100vw - 64px));
+    }
+
+    :root[data-a11y-text-size="xl"] .mobile-app .mobile-solution-grid {
+        gap: 3px;
+    }
+}
+
+/* Fixed-size header controls must stay square instead of inheriting the
+ * generic 48px minimum height and turning into pills. */
+:root[data-a11y-large-controls="true"] .mobile-app .mobile-header-controls {
+    height: 46px;
+}
+
+/* The language picker becomes full-width inside the side menu. The generic
+ * header sizing above must not collapse it back to an icon-only square. */
+:root[data-a11y-large-controls="true"] .mobile-app .mobile-side-menu .language-picker {
+    width: 100%;
+    min-width: 0;
+    height: auto;
+    min-height: 0;
+}
+
+:root[data-a11y-large-controls="true"] .mobile-app .mobile-side-menu .language-picker-button {
+    width: 100%;
+    min-width: 0;
+    height: 48px;
+    min-height: 48px;
+}
+
+/* Keep the vertical map toolbar usable inside the visible map area. */
+:root[data-a11y-large-controls="true"] .mobile-app .mobile-map-tools-toggle,
+:root[data-a11y-large-controls="true"] .mobile-app .map-tool-button,
+:root[data-a11y-large-controls="true"] .mobile-app .map-tool-marker-option,
+:root[data-a11y-large-controls="true"] .mobile-app .map-tool-color {
+    width: 44px;
+    min-width: 44px;
+    height: 44px;
+    min-height: 44px;
+}
+
+:root[data-a11y-large-controls="true"] .mobile-app .map-tool-marker-picker {
+    grid-template-columns: repeat(4, 44px);
+}
+
+:root[data-a11y-large-controls="true"] .mobile-app .map-tool-palette {
+    grid-template-columns: repeat(5, 44px);
+}
+
+:root[data-a11y-large-controls="true"] .mobile-app .map-tools-bar {
+    max-height: calc(
+        100dvh -
+        var(--mobile-header-height) -
+        var(--mobile-sheet-peek) -
+        88px
+    );
+}
+
+/* Mobile SPH warning uses tighter dedicated styles; scale them explicitly. */
+:root .mobile-app .mobile-solution-hud .sph-level-warning-icon {
+    font-size: calc(11px * var(--a11y-text-scale));
+}
+
+:root .mobile-app .mobile-solution-hud .sph-level-warning-title-text {
+    font-size: calc(10px * var(--a11y-text-scale));
+}
+
+:root .mobile-app .mobile-solution-hud .sph-level-warning-chevron {
+    font-size: calc(10px * var(--a11y-text-scale));
+}
+
+:root .mobile-app .mobile-solution-hud .sph-level-warning-body {
+    font-size: calc(9px * var(--a11y-text-scale));
+}

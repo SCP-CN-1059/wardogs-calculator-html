@@ -165,5 +165,15 @@
   "mobileCalculatorSections": "Разделы калькулятора",
   "zoomOutLabel": "Уменьшить масштаб",
   "zoomInLabel": "Увеличить масштаб",
-  "mobileCloseMenu": "Закрыть меню"
+  "mobileCloseMenu": "Закрыть меню",
+  "accessibility": "Доступность",
+  "accessibilitySettings": "Экран и доступность",
+  "accessibilityTextSize": "Размер текста",
+  "accessibilityTextNormal": "Обычный",
+  "accessibilityTextLarge": "Крупный",
+  "accessibilityTextExtraLarge": "Очень крупный",
+  "accessibilityLargerControls": "Увеличенные элементы управления",
+  "accessibilityHighContrast": "Высокая контрастность",
+  "accessibilityReset": "Сбросить",
+  "accessibilityClose": "Закрыть"
 }

@@ -165,5 +165,15 @@
   "mobileCalculatorSections": "계산기 섹션",
   "zoomOutLabel": "축소",
   "zoomInLabel": "확대",
-  "mobileCloseMenu": "메뉴 닫기"
+  "mobileCloseMenu": "메뉴 닫기",
+  "accessibility": "접근성",
+  "accessibilitySettings": "디스플레이 및 접근성",
+  "accessibilityTextSize": "텍스트 크기",
+  "accessibilityTextNormal": "보통",
+  "accessibilityTextLarge": "크게",
+  "accessibilityTextExtraLarge": "매우 크게",
+  "accessibilityLargerControls": "큰 컨트롤",
+  "accessibilityHighContrast": "고대비",
+  "accessibilityReset": "초기화",
+  "accessibilityClose": "닫기"
 }

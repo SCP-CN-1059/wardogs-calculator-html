@@ -165,5 +165,15 @@
   "lobbyParticipantFallback": "Participant",
   "lobbyRecoveryAvailable": "A recovery copy is available below. It is kept only in this tab until reload.",
   "lobbyArtilleryShort": "A",
-  "lobbyTargetShort": "T"
+  "lobbyTargetShort": "T",
+  "accessibility": "Accessibility",
+  "accessibilitySettings": "Display & accessibility",
+  "accessibilityTextSize": "Text size",
+  "accessibilityTextNormal": "Normal",
+  "accessibilityTextLarge": "Large",
+  "accessibilityTextExtraLarge": "Extra large",
+  "accessibilityLargerControls": "Larger controls",
+  "accessibilityHighContrast": "High contrast",
+  "accessibilityReset": "Reset",
+  "accessibilityClose": "Close"
 }

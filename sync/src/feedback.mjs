@@ -44,7 +44,11 @@ export function normalizeFeedback(raw) {
         browser: clean(raw.browser, 32),
         os: clean(raw.os, 32),
         map: clean(raw.map, 32),
+        mapStyle: clean(raw.mapStyle, 32),
         weapon: clean(raw.weapon, 64),
+        textSize: clean(raw.textSize, 16),
+        largerControls: clean(raw.largerControls, 8),
+        highContrast: clean(raw.highContrast, 8),
         version: clean(raw.version, 32)
     };
 }
@@ -74,7 +78,11 @@ export function discordFeedbackPayload(feedback) {
         ['Browser', feedback.browser],
         ['OS', feedback.os],
         ['Map', feedback.map],
+        ['Map style', feedback.mapStyle],
         ['Weapon', feedback.weapon],
+        ['Text size', feedback.textSize],
+        ['Large controls', feedback.largerControls],
+        ['High contrast', feedback.highContrast],
         ['Version', feedback.version],
         ['Contact', feedback.contact]
     ]

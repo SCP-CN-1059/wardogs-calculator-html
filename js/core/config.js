@@ -6,6 +6,7 @@ const DEFAULT_APP_CONFIG = {
     map: {
         camera: {
             maxZoom: 100,
+            mobileMaxZoom: 40,
             panSpeed: 800
         }
     },
@@ -23,7 +24,7 @@ const DEFAULT_APP_CONFIG = {
             authorUrl:
                 'https://discord.com/users/202109460238434304',
             version:
-                '1.8.2'
+                '1.9.0'
         }
     },
 
@@ -134,18 +135,32 @@ function getCameraPanSpeed() {
 }
 
 function getMaxCameraZoom() {
+    const mobile =
+        document.body
+            ?.classList
+            .contains('mobile-app') === true;
+
+    const camera =
+        APP_CONFIG
+            ?.map
+            ?.camera;
+
     const configured =
         Number(
-            APP_CONFIG
-                ?.map
-                ?.camera
-                ?.maxZoom
+            mobile
+                ? camera?.mobileMaxZoom
+                : camera?.maxZoom
         );
+
+    const fallback =
+        mobile
+            ? DEFAULT_APP_CONFIG.map.camera.mobileMaxZoom
+            : DEFAULT_APP_CONFIG.map.camera.maxZoom;
 
     return (
         Number.isFinite(configured) &&
         configured > 0
             ? configured
-            : DEFAULT_APP_CONFIG.map.camera.maxZoom
+            : fallback
     );
 }

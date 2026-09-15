@@ -67,7 +67,7 @@
 
 .mobile-tabs {
     height: 52px;
-    padding: 0 8px 7px;
+    padding: 0 8px 12px;
 
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));

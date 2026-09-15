@@ -246,6 +246,48 @@ function bindEvents() {
             inputs();
         }
     );
+    $('mapStyleSelect')
+        ?.addEventListener(
+            'change',
+            () => {
+                const map =
+                    MAPS[S.map];
+
+                const style =
+                    $('mapStyleSelect')
+                        .value;
+
+                if (
+                    !map ||
+                    !getAvailableMapTileStyleIds(
+                        map
+                    ).includes(style)
+                ) {
+                    syncMapStyleSelect();
+                    return;
+                }
+
+                S.mapStyle =
+                    style;
+
+                persistMapStylePreference();
+
+                if (
+                    typeof trackAnalytics ===
+                        'function'
+                ) {
+                    trackAnalytics(
+                        'map-style-changed',
+                        {
+                            map: S.map,
+                            style: S.mapStyle
+                        }
+                    );
+                }
+
+                draw();
+            }
+        );
 
     $('language').addEventListener(
         'change',

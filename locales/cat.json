@@ -177,5 +177,15 @@
   "mobileCalculatorSections": "CATCULATOR SECTIONS",
   "zoomOutLabel": "ZOOM OUT",
   "zoomInLabel": "ZOOM IN",
-  "mobileCloseMenu": "CLOSE MEOWNU"
+  "mobileCloseMenu": "CLOSE MEOWNU",
+  "accessibility": "PAWCESSIBILITY",
+  "accessibilitySettings": "DISPLAY & PAWCESSIBILITY",
+  "accessibilityTextSize": "TEXT SIZE",
+  "accessibilityTextNormal": "NORMAL",
+  "accessibilityTextLarge": "BIG",
+  "accessibilityTextExtraLarge": "EXTRA BIG",
+  "accessibilityLargerControls": "BIGGER PAW BUTTONS",
+  "accessibilityHighContrast": "HIGH CONTRAST",
+  "accessibilityReset": "RESET",
+  "accessibilityClose": "CLOSE"
 }

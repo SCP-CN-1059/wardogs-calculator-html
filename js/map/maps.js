@@ -161,6 +161,68 @@ function normalizeMap(map) {
                     : DEFAULT_TILE_EXTENSION
         };
 
+        const tileStyles = {};
+
+        Object.entries(
+            map.tiles.styles || {}
+        ).forEach(
+            ([styleId, style]) => {
+                if (
+                    !styleId ||
+                    !isValidTileConfig(style)
+                ) {
+                    return;
+                }
+
+                tileStyles[styleId] = {
+                    path:
+                        style.path
+                            .replace(/\/+$/, ''),
+                    tileSize:
+                        typeof style.tileSize === 'number'
+                            ? style.tileSize
+                            : normalized.tiles.tileSize,
+                    minZoom:
+                        typeof style.minZoom === 'number'
+                            ? style.minZoom
+                            : normalized.tiles.minZoom,
+                    maxZoom:
+                        typeof style.maxZoom === 'number'
+                            ? style.maxZoom
+                            : normalized.tiles.maxZoom,
+                    extension:
+                        typeof style.extension === 'string' &&
+                        style.extension.trim()
+                            ? style.extension.replace(/^\./, '')
+                            : normalized.tiles.extension
+                };
+            }
+        );
+
+        if (!Object.keys(tileStyles).length) {
+            tileStyles.grayscale = {
+                path: normalized.tiles.path,
+                tileSize: normalized.tiles.tileSize,
+                minZoom: normalized.tiles.minZoom,
+                maxZoom: normalized.tiles.maxZoom,
+                extension: normalized.tiles.extension
+            };
+        }
+
+        const requestedDefaultStyle =
+            String(
+                map.tiles.defaultStyle ||
+                ''
+            ).trim();
+
+        normalized.tiles.styles =
+            tileStyles;
+
+        normalized.tiles.defaultStyle =
+            tileStyles[requestedDefaultStyle]
+                ? requestedDefaultStyle
+                : Object.keys(tileStyles)[0];
+
     } else {
 
         normalized.tiles =
@@ -301,6 +363,184 @@ async function loadMaps() {
 
 
 /* =========================
+   MAP STYLE SELECT
+   ========================= */
+
+const MAP_STYLE_COPY = {
+    en: { label: 'Map style', grayscale: 'Black & white', color: 'Color' },
+    ru: { label: 'Стиль карты', grayscale: 'Чёрно-белая', color: 'Цветная' },
+    uk: { label: 'Стиль карти', grayscale: 'Чорно-біла', color: 'Кольорова' },
+    de: { label: 'Kartenstil', grayscale: 'Schwarzweiß', color: 'Farbig' },
+    fr: { label: 'Style de carte', grayscale: 'Noir et blanc', color: 'Couleur' },
+    es: { label: 'Estilo del mapa', grayscale: 'Blanco y negro', color: 'Color' },
+    pl: { label: 'Styl mapy', grayscale: 'Czarno-biała', color: 'Kolorowa' },
+    pt: { label: 'Estilo do mapa', grayscale: 'Preto e branco', color: 'A cores' },
+    'zh-cn': { label: '地图样式', grayscale: '黑白', color: '彩色' },
+    ko: { label: '지도 스타일', grayscale: '흑백', color: '컬러' },
+    ja: { label: 'マップスタイル', grayscale: '白黒', color: 'カラー' },
+    cat: { label: 'MEOWP STYLE', grayscale: 'BLACK & WHITE PAWS', color: 'COLORFUL PAWS' }
+};
+
+function getMapStyleCopy(key) {
+    const copy =
+        MAP_STYLE_COPY[LANG] ||
+        MAP_STYLE_COPY.en;
+
+    return (
+        copy[key] ||
+        MAP_STYLE_COPY.en[key] ||
+        key
+    );
+}
+
+function getAvailableMapTileStyleIds(map) {
+    return Object.keys(
+        map?.tiles?.styles || {}
+    );
+}
+
+function getMapStyleLabel(styleId) {
+    return getMapStyleCopy(
+        styleId
+    );
+}
+
+function ensureMapStyleControl() {
+    let control =
+        $('mapStyleControl');
+
+    if (control) {
+        return control;
+    }
+
+    const mapSelect =
+        $('mapSelect');
+
+    if (!mapSelect) {
+        return null;
+    }
+
+    control =
+        document.createElement('div');
+
+    control.id =
+        'mapStyleControl';
+
+    control.className =
+        'map-style-control';
+
+    const label =
+        document.createElement('label');
+
+    label.htmlFor =
+        'mapStyleSelect';
+
+    const select =
+        document.createElement('select');
+
+    select.id =
+        'mapStyleSelect';
+
+    control.append(
+        label,
+        select
+    );
+
+    mapSelect.insertAdjacentElement(
+        'afterend',
+        control
+    );
+
+    return control;
+}
+
+function syncMapStyleSelect() {
+    const control =
+        ensureMapStyleControl();
+
+    const select =
+        $('mapStyleSelect');
+
+    if (
+        !control ||
+        !select
+    ) {
+        return;
+    }
+
+    const map =
+        S.map !== 'custom'
+            ? MAPS[S.map]
+            : null;
+
+    const styles =
+        getAvailableMapTileStyleIds(
+            map
+        );
+
+    if (!styles.length) {
+        control.hidden = true;
+        return;
+    }
+
+    control.hidden = false;
+
+    const label =
+        control.querySelector('label');
+
+    if (label) {
+        label.textContent =
+            getMapStyleCopy('label');
+    }
+
+    const fallback =
+        map.tiles.defaultStyle &&
+        styles.includes(
+            map.tiles.defaultStyle
+        )
+            ? map.tiles.defaultStyle
+            : styles[0];
+
+    if (
+        !styles.includes(
+            S.mapStyle
+        )
+    ) {
+        S.mapStyle =
+            fallback;
+    }
+
+    select.innerHTML = '';
+
+    styles.forEach(
+        styleId => {
+            const option =
+                document.createElement(
+                    'option'
+                );
+
+            option.value =
+                styleId;
+
+            option.textContent =
+                getMapStyleLabel(
+                    styleId
+                );
+
+            select.appendChild(
+                option
+            );
+        }
+    );
+
+    select.value =
+        S.mapStyle;
+
+    select.disabled =
+        styles.length < 2;
+}
+
+/* =========================
    DIRECT MAP ENTRY
    ========================= */
 
@@ -432,4 +672,6 @@ function populateMapSelect() {
 
     select.value =
         S.map;
+
+    syncMapStyleSelect();
 }

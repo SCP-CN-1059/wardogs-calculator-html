@@ -64,7 +64,8 @@ const desktopStyleFiles = [
     'styles/desktop/motd.css',
     'styles/desktop/lobby.css',
     'styles/desktop/feedback.css',
-    'styles/desktop/seo.css'
+    'styles/desktop/seo.css',
+    'styles/desktop/accessibility.css'
 ];
 
 const mobileStyleFiles = [
@@ -72,7 +73,8 @@ const mobileStyleFiles = [
     'styles/mobile/map.css',
     'styles/mobile/tools.css',
     'styles/mobile/sheet.css',
-    'styles/mobile/responsive.css'
+    'styles/mobile/responsive.css',
+    'styles/mobile/accessibility.css'
 ];
 
 const desktopScriptFiles = [

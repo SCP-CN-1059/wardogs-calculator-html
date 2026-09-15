@@ -13,6 +13,8 @@ const S = {
 
     map: 'bakurani',
 
+    mapStyle: 'grayscale',
+
     weapon: null,
 
     origin: {
@@ -54,6 +56,9 @@ const MAP_POINTS_KEY =
 const APP_SELECTIONS_KEY =
     'wardogs-app-selections';
 
+const MAP_STYLE_STORAGE_KEY =
+    'wardogs-map-style';
+
 const DEFAULT_CUSTOM_MAP_SIZE = {
     w: 10,
     h: 10
@@ -69,6 +74,8 @@ let savedCustomMapSize = {
    ========================= */
 
 function loadAppSelections() {
+    loadMapStylePreference();
+
     try {
         const raw =
             localStorage.getItem(
@@ -166,6 +173,47 @@ function getSavedCustomMapSize() {
     };
 }
 
+
+
+/* =========================
+   MAP STYLE PREFERENCE
+   ========================= */
+
+function loadMapStylePreference() {
+    try {
+        const saved =
+            localStorage.getItem(
+                MAP_STYLE_STORAGE_KEY
+            );
+
+        if (
+            typeof saved === 'string' &&
+            saved.trim()
+        ) {
+            S.mapStyle =
+                saved.trim();
+        }
+    } catch (error) {
+        console.warn(
+            'Failed to load map style preference:',
+            error
+        );
+    }
+}
+
+function persistMapStylePreference() {
+    try {
+        localStorage.setItem(
+            MAP_STYLE_STORAGE_KEY,
+            S.mapStyle
+        );
+    } catch (error) {
+        console.warn(
+            'Failed to save map style preference:',
+            error
+        );
+    }
+}
 
 /* =========================
    KEYBOARD SHORTCUTS

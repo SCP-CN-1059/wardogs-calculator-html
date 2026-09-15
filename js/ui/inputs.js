@@ -114,4 +114,11 @@ function updatePresetLock() {
         locked
             ? 'none'
             : '';
+
+    if (
+        typeof syncMapStyleSelect ===
+            'function'
+    ) {
+        syncMapStyleSelect();
+    }
 }

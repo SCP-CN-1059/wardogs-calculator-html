@@ -115,6 +115,25 @@ function draw() {
         drawTileMap(
             currentMap
         );
+
+        /*
+         * Color tiles are intentionally dimmed slightly so tactical
+         * overlays stay readable over bright/saturated terrain imagery.
+         * Keep this below contours, grid, zones, drawings and artillery
+         * so only the map artwork itself is darkened.
+         */
+        if (S.mapStyle === 'color') {
+            ctx.save();
+            ctx.fillStyle =
+                'rgba(0,0,0,.20)';
+            ctx.fillRect(
+                0,
+                0,
+                v.mw,
+                v.mh
+            );
+            ctx.restore();
+        }
     }
 
     /*

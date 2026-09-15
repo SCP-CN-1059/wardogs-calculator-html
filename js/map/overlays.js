@@ -1431,6 +1431,24 @@ function drawMarkerEmoji(
     return emojiSize;
 }
 
+function getMapLabelAccessibilityScale() {
+
+    const size =
+        document.documentElement
+            ?.dataset
+            ?.a11yTextSize;
+
+    if (size === 'xl') {
+        return 1.45;
+    }
+
+    if (size === 'large') {
+        return 1.2;
+    }
+
+    return 1;
+}
+
 function drawPresetMarkerLabel(
     item,
     x,
@@ -1443,6 +1461,9 @@ function drawPresetMarkerLabel(
         return;
     }
 
+    const accessibilityScale =
+        getMapLabelAccessibilityScale();
+
     const labelSize =
         Math.max(
             10,
@@ -1450,7 +1471,8 @@ function drawPresetMarkerLabel(
                 14,
                 v.scale * 0.15
             )
-        );
+        ) *
+        accessibilityScale;
 
     ctx.font =
         `${labelSize}px system-ui, sans-serif`;
@@ -1461,10 +1483,12 @@ function drawPresetMarkerLabel(
         );
 
     const paddingX =
-        6;
+        6 *
+        accessibilityScale;
 
     const paddingY =
-        3;
+        3 *
+        accessibilityScale;
 
     const labelWidth =
         metrics.width +

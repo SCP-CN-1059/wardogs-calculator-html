@@ -360,6 +360,13 @@ async function init() {
 
     try {
 
+        if (
+            typeof initializeAccessibilityPreferences ===
+                'function'
+        ) {
+            initializeAccessibilityPreferences();
+        }
+
         applyTheme(
             getTheme()
         );

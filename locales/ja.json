@@ -165,5 +165,15 @@
   "mobileCalculatorSections": "計算機のセクション",
   "zoomOutLabel": "縮小",
   "zoomInLabel": "拡大",
-  "mobileCloseMenu": "メニューを閉じる"
+  "mobileCloseMenu": "メニューを閉じる",
+  "accessibility": "アクセシビリティ",
+  "accessibilitySettings": "表示とアクセシビリティ",
+  "accessibilityTextSize": "文字サイズ",
+  "accessibilityTextNormal": "標準",
+  "accessibilityTextLarge": "大",
+  "accessibilityTextExtraLarge": "特大",
+  "accessibilityLargerControls": "大きな操作ボタン",
+  "accessibilityHighContrast": "ハイコントラスト",
+  "accessibilityReset": "リセット",
+  "accessibilityClose": "閉じる"
 }

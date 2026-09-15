@@ -228,6 +228,10 @@ function feedbackOs() {
 function feedbackTechnicalContext() {
     const state = typeof S === 'object' && S ? S : {};
     const footerConfig = APP_CONFIG?.site?.footer || {};
+    const accessibility =
+        typeof getAccessibilityDiagnostics === 'function'
+            ? getAccessibilityDiagnostics()
+            : {};
     return {
         page: location.pathname.slice(0, 160),
         language: String(typeof LANG === 'string' ? LANG : document.documentElement.lang || '').slice(0, 16),
@@ -236,7 +240,11 @@ function feedbackTechnicalContext() {
         browser: feedbackBrowser().slice(0, 32),
         os: feedbackOs().slice(0, 32),
         map: String(state.map || '').slice(0, 32),
+        mapStyle: String(state.mapStyle || '').slice(0, 32),
         weapon: String(state.weapon || '').slice(0, 64),
+        textSize: String(accessibility.textSize || '').slice(0, 16),
+        largerControls: accessibility.largerControls === true ? 'true' : 'false',
+        highContrast: accessibility.highContrast === true ? 'true' : 'false',
         version: String(footerConfig.version || '').slice(0, 32)
     };
 }

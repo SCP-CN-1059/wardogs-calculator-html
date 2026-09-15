@@ -169,5 +169,15 @@
   "mobileCalculatorSections": "Розділи калькулятора",
   "zoomOutLabel": "Зменшити масштаб",
   "zoomInLabel": "Збільшити масштаб",
-  "mobileCloseMenu": "Закрити меню"
+  "mobileCloseMenu": "Закрити меню",
+  "accessibility": "Доступність",
+  "accessibilitySettings": "Відображення й доступність",
+  "accessibilityTextSize": "Розмір тексту",
+  "accessibilityTextNormal": "Звичайний",
+  "accessibilityTextLarge": "Великий",
+  "accessibilityTextExtraLarge": "Дуже великий",
+  "accessibilityLargerControls": "Збільшені елементи керування",
+  "accessibilityHighContrast": "Висока контрастність",
+  "accessibilityReset": "Скинути",
+  "accessibilityClose": "Закрити"
 }

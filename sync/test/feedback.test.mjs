@@ -20,6 +20,9 @@ test('feedback normalization keeps only bounded safe metadata', () => {
         os: 'Windows',
         map: 'bakurani',
         weapon: 'sph-2',
+        textSize: 'xl',
+        largerControls: 'true',
+        highContrast: 'false',
         version: '1.8.0'
     });
     assert.equal(result.message, 'map does not load\nplease check');
@@ -28,6 +31,9 @@ test('feedback normalization keeps only bounded safe metadata', () => {
     assert.equal(result.map, 'bakurani');
     assert.equal(result.browser, 'Firefox');
     assert.equal(result.os, 'Windows');
+    assert.equal(result.textSize, 'xl');
+    assert.equal(result.largerControls, 'true');
+    assert.equal(result.highContrast, 'false');
     assert.equal(result.rating, null);
 });
 

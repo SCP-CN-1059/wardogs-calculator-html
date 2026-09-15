@@ -181,5 +181,15 @@
   "lobbyParticipantFallback": "参与者",
   "lobbyRecoveryAvailable": "下方有可用的恢复备份。它只会在当前标签页中保留到重载。",
   "lobbyArtilleryShort": "炮",
-  "lobbyTargetShort": "目"
+  "lobbyTargetShort": "目",
+  "accessibility": "无障碍",
+  "accessibilitySettings": "显示与无障碍",
+  "accessibilityTextSize": "文字大小",
+  "accessibilityTextNormal": "正常",
+  "accessibilityTextLarge": "大",
+  "accessibilityTextExtraLarge": "超大",
+  "accessibilityLargerControls": "更大的控件",
+  "accessibilityHighContrast": "高对比度",
+  "accessibilityReset": "重置",
+  "accessibilityClose": "关闭"
 }
