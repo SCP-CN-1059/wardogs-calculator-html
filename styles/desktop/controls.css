@@ -111,7 +111,9 @@ button:active {
     transform: translateY(1px);
 }
 
-button:disabled {
+input:disabled,
+button:disabled,
+select:disabled {
     opacity: .4;
 
     cursor: not-allowed;

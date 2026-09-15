@@ -111,7 +111,10 @@ function classifyStaticJsonResource(path) {
 }
 
 function isRetryableStaticJsonFailure(code) {
-    if (code === 'network') {
+    if (
+        code === 'network' ||
+        code === 'decode'
+    ) {
         return true;
     }
 
@@ -176,6 +179,11 @@ async function fetchJSON(path) {
 
     let lastError = null;
     let failureCode = 'network';
+    let previousFailureCode = '';
+    let responseStatus = 0;
+    let responseContentType = '';
+    let responseContentLength = '';
+    let responseHost = '';
 
     for (
         let attempt = 1;
@@ -183,23 +191,72 @@ async function fetchJSON(path) {
         attempt++
     ) {
         failureCode = 'network';
+        responseStatus = 0;
+        responseContentType = '';
+        responseContentLength = '';
+        responseHost = '';
+
+        const retryingDecode =
+            attempt > 1 &&
+            previousFailureCode === 'decode';
+
+        let requestUrl = url;
+
+        if (retryingDecode) {
+            try {
+                const retryUrl = new URL(url);
+                retryUrl.searchParams.set(
+                    '_wd_retry',
+                    String(attempt)
+                );
+                requestUrl = retryUrl.href;
+            } catch (_) {
+                requestUrl = url;
+            }
+        }
 
         try {
             const response =
                 await fetch(
-                    url,
+                    requestUrl,
                     {
                         /*
                          * Production JSON URLs carry the current build fingerprint,
                          * so cached data is invalidated automatically on deploy.
-                         * Keep no-cache for local/dev builds with no fingerprint.
+                         * A decode failure gets one cache-busting reload in case a
+                         * browser/proxy/CDN edge returned a truncated or non-JSON body.
                          */
                         cache:
-                            resource.versioned
-                                ? 'force-cache'
-                                : 'no-cache'
+                            retryingDecode
+                                ? 'reload'
+                                : resource.versioned
+                                    ? 'force-cache'
+                                    : 'no-cache'
                     }
                 );
+
+            responseStatus = response.status;
+            responseContentType =
+                String(
+                    response.headers.get(
+                        'content-type'
+                    ) || ''
+                ).slice(0, 64);
+            responseContentLength =
+                String(
+                    response.headers.get(
+                        'content-length'
+                    ) || ''
+                ).slice(0, 32);
+
+            try {
+                responseHost =
+                    new URL(response.url)
+                        .hostname
+                        .slice(0, 64);
+            } catch (_) {
+                responseHost = '';
+            }
 
             if (!response.ok) {
                 failureCode =
@@ -217,6 +274,7 @@ async function fetchJSON(path) {
 
         } catch (error) {
             lastError = error;
+            previousFailureCode = failureCode;
 
             if (
                 attempt < STATIC_JSON_FETCH_ATTEMPTS &&
@@ -256,7 +314,11 @@ async function fetchJSON(path) {
                         map: mapId,
                         code: failureCode,
                         resource: resourceId,
-                        attempts: attempt
+                        attempts: attempt,
+                        status: responseStatus,
+                        contentType: responseContentType,
+                        contentLength: responseContentLength,
+                        responseHost
                     }
                 );
             }

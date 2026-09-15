@@ -23,6 +23,46 @@ async function initLobby() {
         artilleryShort: 'lobbyArtilleryShort', targetShort: 'lobbyTargetShort'
     };
     const t = key => tr(textKeys[key] || key);
+
+    function setLobbyMapLockHint(locked) {
+        const select = $('mapSelect');
+
+        if (!select) return;
+
+        let hint = $('lobbyMapLockHint');
+
+        if (locked) {
+            if (!hint) {
+                hint = document.createElement('div');
+                hint.id = 'lobbyMapLockHint';
+                hint.className = 'hint lobby-map-lock-hint';
+                select.insertAdjacentElement('afterend', hint);
+            }
+
+            hint.textContent = t('map');
+            hint.hidden = false;
+            select.setAttribute(
+                'aria-describedby',
+                'lobbyMapLockHint'
+            );
+            select.title = t('map');
+            return;
+        }
+
+        if (hint) hint.hidden = true;
+
+        if (
+            select.getAttribute('aria-describedby') ===
+            'lobbyMapLockHint'
+        ) {
+            select.removeAttribute('aria-describedby');
+        }
+
+        if (select.title === t('map')) {
+            select.removeAttribute('title');
+        }
+    }
+
     const root = document.createElement('div');
     root.id = 'lobbyControls';
     root.className = 'lobby-controls';
@@ -296,6 +336,7 @@ async function initLobby() {
         for (const id of ['mapSelect', 'apply', 'w', 'h']) {
             if ($(id)) { backup.disabled[id] = $(id).disabled; $(id).disabled = true; }
         }
+        setLobbyMapLockHint(true);
         lobby.active = true;
         resetGesture();
     }
@@ -316,6 +357,7 @@ async function initLobby() {
             resetGesture();
             Object.assign(S, backup.state); Object.assign(MAP_TOOL_STATE, backup.tools); savedTargets = backup.targets;
             for (const [id, disabled] of Object.entries(backup.disabled)) $(id).disabled = disabled;
+            setLobbyMapLockHint(false);
             // Keep active until rendering finishes: no personal write hook sees room data.
             updatePresetLock(); inputs(); renderSavedTargets();
             lobby.active = false; applying = false; backup = null;
