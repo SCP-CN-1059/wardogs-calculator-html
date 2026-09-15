@@ -9,9 +9,7 @@
     "maxChangeBatchesPerRoom": 1000,
     "batchDelayMs": 300,
     "allowedOrigins": [
-      "https://wardogs-artillery.com",
-      "http://localhost:8000",
-      "http://127.0.0.1:8000"
+      "https://wardogs-artillery.com"
     ],
     "developmentOrigins": [
       "http://localhost:8000",
