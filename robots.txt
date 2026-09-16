@@ -1,4 +1,0 @@
-User-agent: *
-Allow: /
-
-Sitemap: https://wardogs-artillery.com/sitemap.xml

@@ -1,92 +1,66 @@
-# WARDOGS Artillery Calculator
+# WARDOGS 炮兵计算器 · 单文件版
 
-[![Live App](https://img.shields.io/badge/Live-wardogs--artillery.com-d7a452?style=flat-square)](https://wardogs-artillery.com/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg?style=flat-square)](LICENSE)
-[![Vanilla JS](https://img.shields.io/badge/JavaScript-Vanilla-F7DF1E?style=flat-square&logo=javascript&logoColor=000)](https://developer.mozilla.org/en-US/docs/Web/JavaScript)
-[![GitHub Pages](https://img.shields.io/badge/Hosted_on-GitHub_Pages-222?style=flat-square&logo=github)](https://pages.github.com/)
+**一个 HTML 文件 = 完整的地图 + 炮兵计算器。** 双击用浏览器打开就能用：
+不需要联网、不需要服务器、不需要安装任何东西。
 
-A lightweight, open-source **L81 Mortar** and **SPH-2** artillery calculator, live team map, and tactical planning tool for **WARDOGS**.
+![预览](preview.png)
 
-**Live app:** https://wardogs-artillery.com/  
-**Mobile UI:** https://wardogs-artillery.com/mobile/  
+## 下载哪个
 
-<table>
-  <tr>
-    <th width="72%">Desktop</th>
-    <th width="28%">Mobile</th>
-  </tr>
-  <tr>
-    <td align="center">
-      <img src="assets/preview.png" alt="WARDOGS Artillery Calculator — Desktop">
-    </td>
-    <td align="center">
-      <img src="assets/preview_mobile.png" alt="WARDOGS Artillery Calculator — Mobile">
-    </td>
-  </tr>
-</table>
+| 文件 | 大小 | 影像精度 | 适合 |
+| --- | --- | --- | --- |
+| [`炮兵计算器-单文件版-5MB.html`](炮兵计算器-单文件版-5MB.html) | **4.73 MB** | 全图 z0–z2，塔楼 ±1 km 交战区 z3–z6 | 日常用、发给队友（推荐） |
+| [`炮兵计算器-单文件版.html`](炮兵计算器-单文件版.html) | **31.02 MB** | 全图 z0–z4，塔楼 ±1.5 km 交战区 z5–z7 | 想让全图都清晰一点 |
 
----
+点文件名进入后选 **Download raw file**，或 `Code → Download ZIP` 拿整包。
 
-## Interfaces
+## 怎么用
 
-The project ships two interfaces from the same repository and GitHub Pages deployment:
+1. 下载 `.html` 文件；
+2. 双击打开（Chrome / Edge / Firefox 都可以），或直接拖进浏览器窗口；
+3. 用完关掉页面就行 —— 没有后台进程，也不写注册表。
 
-- **Desktop** — `/`
-- **Mobile** — `/mobile/`
+> **断网可用**：地图影像、界面、12 种语言全部内嵌在这一个文件里。实测在屏蔽所有域名解析
+> （`--host-resolver-rules=MAP * ~NOTFOUND`）的情况下正常打开、缩放、算射击诸元，外部请求数为 0。
 
-Phones are automatically routed from the desktop entry pages to the matching mobile route. The mobile UI is a separate map-first interface with touch panning, pinch zoom, touch-friendly point placement, Map Tools, and a bottom-sheet calculator.
+## 操作
 
-Both interfaces reuse the same calculator logic, maps, tile pyramid, configuration, translations, saved targets, drawings, browser storage, and optional live team lobbies.
+| 操作 | 效果 |
+| --- | --- |
+| **鼠标右键** 按下/拖动地图 | 设置/拖动**炮位**（不会弹出浏览器菜单） |
+| **鼠标左键** 拖动地图 | 设置/拖动**目标**（点塔楼等预设标记可直接把它设为目标） |
+| **空格 + 左键拖动**，或**中键拖动** | 平移地图 |
+| 滚轮 | 以光标为中心缩放 |
+| `W` `A` `S` `D` / 方向键 | 平移（按住 `Shift` 加速） |
+| 拖动左侧栏右边缘 | 自定义侧栏宽度（双击把手恢复默认 290 px） |
+| 左侧栏坐标输入框 | 直接输入坐标；炮位/目标都支持复制、粘贴、锁定 |
 
-## Live Team Lobbies
+## 功能
 
-Create a lobby and share its invite link or code to plan on the same tactical map. Drawings, zones, polygons, and user markers synchronise live. Every player keeps a separate weapon, artillery point, target, and range circle; teammates see labelled player positions without duplicate range circles.
+- **三张地图**：Bakurani / Ozeti / Zestafona，另可自定义尺寸
+- **两种武器**：L81 迫击炮、SPH-2（距离 / 方位角 / MIL，LOW·HIGH 双解，含射程状态提示）
+- **12 种语言**：默认跟随浏览器语言，随时可切换（单文件里是原地切换，不跳转地址）
+- 保存目标、测距尺、坐标搜索、图层开关、地图全屏
+- 所有偏好与保存目标只存在浏览器本地（localStorage），不上传任何数据
 
-Lobby traffic starts only after a player creates or joins a room. See [Collaborative lobbies](docs/lobbies.md) for deployment, privacy, recovery, limits, and Cloudflare configuration.
+**不含**：彩色地图、等高线、地形高程修正、联机大厅、反馈表单、访问统计、画图标注、导入导出、今日消息。
 
-## Localization
+## 说明
 
-The shared locale system supports English, Russian, Ukrainian, German, French, Spanish, Polish, Portuguese, Simplified Chinese, Korean, Japanese, and the non-indexed Cat locale.
+- 地图影像是**灰度 JPEG**（为了压体积）：交战区最清晰，离交战区越远越模糊 ——
+  拿不准位置时建议直接用坐标输入框核对。
+- 保存的目标与设置存在浏览器里，换浏览器或清缓存会丢。
+- 手机浏览器也能打开，但用的是桌面界面（本版本没有 `/mobile/` 路由）。
 
-## Documentation
+## 来源与许可
 
-Detailed documentation is split into focused files to keep this README concise.
+本项目是 **[apollyon-sys/wardogs-calculator](https://github.com/apollyon-sys/wardogs-calculator)**（MIT）的
+**单文件打包版**：把上游应用的样式、脚本、地图配置、标记图标与地图瓦片全部内嵌进一个 HTML，
+并按“离线分发”做了精简与调整（去掉需要联网的联机/统计等部分；右键改为放炮位、空格拖动平移、
+侧栏可拖宽；语言改为原地切换；页脚只保留仓库链接）。
 
-- [Features & weapons](docs/features.md) — calculator features, Map Tools, weapons, touch controls, and coordinate system
-- [Maps](docs/maps.md) — map configuration, tile structure, bounds, marker zoom visibility, and adding new maps
-- [Mobile interface](docs/mobile.md) — mobile routes, automatic routing, touch controls, and deployment architecture
-- [Localization](docs/localization.md) — supported languages, shared translations, automatic language selection, localized URLs, and SEO metadata
-- [Development](docs/development.md) — project structure, local development, unified build process, and GitHub Pages deployment
-- [Analytics](docs/analytics.md) — Umami custom events, event payloads, debouncing, and privacy considerations
-- [Message of the Day](docs/motd.md) — MOTD configuration, localization, and behavior
-- [Collaborative lobbies](docs/lobbies.md) — live team map behaviour, Cloudflare deployment, limits, privacy, and recovery
-- [Security hardening](docs/security.md) — public-source threat model, Cloudflare headers, secrets, CI, and residual risks
-- [Contributing](docs/contributing.md) — contribution guidelines
-- [License & Disclaimer](docs/legal.md) — MIT scope, third-party assets, and project disclaimer
-
-## Quick Start
-
-```bash
-npm run build
-cd dist
-python -m http.server 8000
-```
-
-Then open:
-
-```text
-Desktop:            http://localhost:8000/
-Mobile:             http://localhost:8000/mobile/
-```
-
-## Contributing
-
-Corrections, map data improvements, localization updates, bug fixes, and QoL improvements are welcome.
-
-See [Contributing](docs/contributing.md) for details.
-
-## License
-
-Original project source code is licensed under the [MIT License](LICENSE).
-
-WARDOGS assets and other third-party materials are not covered by the MIT License. See [License & Disclaimer](docs/legal.md) for details.
+- 上游代码许可为 **MIT**（见 [LICENSE](LICENSE)），本仓库保留原始许可证与署名。
+- WARDOGS 及第三方素材版权归其各自所有者；本项目是**非官方**社区工具，
+  与 BULKHEAD / WARDOGS 开发团队无隶属关系。
+- 想自己重新打包（改精度、改交战区范围、改语言）：完整源码与打包脚本在本仓库的
+  **`source`** 分支 —— 需要 Node.js 18+、Python 3 + Pillow，以及上游的瓦片镜像。
