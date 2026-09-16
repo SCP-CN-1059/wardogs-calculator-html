@@ -54,6 +54,8 @@ Detailed documentation is split into focused files to keep this README concise.
 
 - [Features & weapons](docs/features.md) — calculator features, Map Tools, weapons, touch controls, and coordinate system
 - [Maps](docs/maps.md) — map configuration, tile structure, bounds, marker zoom visibility, and adding new maps
+- [Offline use](docs/offline.md) — mirroring tiles, Terrain3D chunks, and the local launcher for a fully offline calculator (离线使用)
+- [Single-file build](docs/single-file.md) — one self-contained HTML file (embedded tiles, no server, no network) with Space+drag panning (单文件版)
 - [Mobile interface](docs/mobile.md) — mobile routes, automatic routing, touch controls, and deployment architecture
 - [Localization](docs/localization.md) — supported languages, shared translations, automatic language selection, localized URLs, and SEO metadata
 - [Development](docs/development.md) — project structure, local development, unified build process, and GitHub Pages deployment
@@ -78,6 +80,37 @@ Then open:
 Desktop:            http://localhost:8000/
 Mobile:             http://localhost:8000/mobile/
 ```
+
+## Offline Use
+
+Every release asset the calculator loads — the Bakurani/Ozeti/Zestafona tile pyramids in both
+styles, their Terrain3D chunks, marker art, and configuration — can be mirrored into the checkout
+and served from `127.0.0.1`, so the tool keeps working with no internet connection.
+
+```bash
+npm run mirror            # download the tile pyramids (resumable)
+npm run mirror -- --terrain
+npm run offline           # serve and open http://127.0.0.1:8000/
+```
+
+On Windows, `离线启动.cmd` does the same with one double-click.
+See [Offline use](docs/offline.md) for the mirror layout, the `offline.enabled` switch,
+verification commands, and known limits.
+
+### One file, no server
+
+`npm run build:single` assembles `炮兵计算器-单文件版.html`: stylesheets, scripts, map
+configuration, marker art and a re-encoded grey-scale tile set embedded as data URIs.
+Double-clicking that file runs the calculator with no server and no network at all.
+The tile budget is spent where the fighting happens — full-map levels z0–z4 plus
+z5–z7 inside a 3×3 km box around each map's tower cluster.
+
+That file is a deliberately reduced interface — the map style picker, the accessibility panel, the
+drawing tools, import/export and the message of the day are all left out (all twelve languages stay
+in, at a cost of about 0.1 MB, and switching happens in place because a single file has no locale
+routes). The camera pans with Space + left drag, the right button places the artillery position and
+the left button places the target. `--full`, `--features`, `--languages` and the image flags rebuild
+it with any subset back — see [Single-file build](docs/single-file.md) for the measured sizes.
 
 ## Contributing
 

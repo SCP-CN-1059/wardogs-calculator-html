@@ -236,6 +236,20 @@ async function loadTerrainBallisticsRuntime() {
 }
 
 function requestTerrainBallisticsRuntime() {
+
+    /*
+     * The standalone build carries no Terrain3D data — the heightfields would
+     * dwarf the map imagery — so the runtime is never requested there.
+     * Firing solutions stay on the flat tables, exactly as they do whenever
+     * terrain data is unavailable.
+     */
+    if (
+        typeof isSingleFileMode === 'function' &&
+        isSingleFileMode()
+    ) {
+        return Promise.resolve(null);
+    }
+
     if (!terrainRuntimePromise) {
         terrainRuntimePromise =
             loadTerrainBallisticsRuntime();

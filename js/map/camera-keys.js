@@ -29,6 +29,37 @@ const CAMERA_SPRINT_FACTOR = 2.5;
 const HELD_PAN_KEYS =
     new Set();
 
+/*
+ * Holding Space turns a primary-button drag into a map drag, the way image
+ * viewers and GIS tools do it. Without Space the canvas keeps placing the
+ * artillery and target points, which stays the fastest way to use them.
+ * The right mouse button has always panned as well.
+ */
+let cameraSpacePanHeld = false;
+
+function isSpacePanHeld() {
+    return cameraSpacePanHeld;
+}
+
+function setSpacePanHeld(held) {
+
+    if (
+        cameraSpacePanHeld === held
+    ) {
+        return;
+    }
+
+    cameraSpacePanHeld =
+        held;
+
+    document.body
+        ?.classList
+        .toggle(
+            'space-pan',
+            held
+        );
+}
+
 function isPanDirectionHeld(direction) {
 
     for (const key of HELD_PAN_KEYS) {
@@ -154,6 +185,8 @@ function stopCameraPan() {
     HELD_PAN_KEYS.clear();
 
     cameraSprintHeld = false;
+
+    setSpacePanHeld(false);
 }
 
 function zoomCameraFromKey(zoomIn) {
@@ -190,6 +223,15 @@ function handleCameraKeyDown(event) {
             event
         );
 
+    if (key === ' ') {
+
+        setSpacePanHeld(
+            true
+        );
+
+        return true;
+    }
+
     cameraSprintHeld =
         event.shiftKey;
 
@@ -221,6 +263,15 @@ function handleCameraKeyUp(event) {
         getKeyboardShortcutKey(
             event
         );
+
+    if (key === ' ') {
+
+        setSpacePanHeld(
+            false
+        );
+
+        return;
+    }
 
     cameraSprintHeld =
         event.shiftKey;

@@ -44,8 +44,7 @@ The current event set intentionally focuses on meaningful user actions rather th
 | `user-marker-placed` | A user Map Tools marker is placed | `map` |
 | `map-changes-exported` | User exports persistent Map Tools data | `drawings`, `markers` |
 | `map-changes-imported` | A valid Map Tools JSON file is imported | `drawings`, `markers`, `layers` |
-| `partner-click` | User opens a community partner link | `partner`, `placement` |
-| `donation-click` | User opens a donation service | `service`, `placement` |
+| `repository-click` | User opens the project repository, the only external link | `placement` |
 | `desktop-version` | Mobile user chooses the desktop interface | none |
 | `lobby-opened` | Lobby panel is opened for the first time during the current page lifetime | `map` |
 | `lobby-connected` | A lobby connection succeeds after creating, joining or reconnecting | `method`, `map`, optional `withSavedTargets` for creation |
@@ -144,7 +143,7 @@ Lobby events never include the invite or room code, owner key, player name, rost
 
 This keeps event payloads small and avoids generating excessive event-data usage. High-frequency actions such as map panning, cursor movement, mouse movement, and pinch/wheel zoom are deliberately not tracked.
 
-Repeated high-volume calculator interactions are also deduplicated before they are queued or sent to Umami. Rare actions such as saved-target transfer, completed map drawings, zones and polygons, ruler use, map changes, Terrain3D/contour toggles, donation/partner clicks and lobby lifecycle actions continue to be recorded per completed action because their event volume is comparatively small and their action counts remain useful.
+Repeated high-volume calculator interactions are also deduplicated before they are queued or sent to Umami. Rare actions such as saved-target transfer, completed map drawings, zones and polygons, ruler use, map changes, Terrain3D/contour toggles, repository clicks and lobby lifecycle actions continue to be recorded per completed action because their event volume is comparatively small and their action counts remain useful.
 
 ## Adding an event
 

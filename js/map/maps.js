@@ -406,6 +406,15 @@ function getMapStyleLabel(styleId) {
 }
 
 function ensureMapStyleControl() {
+
+    /*
+     * The standalone build embeds a single style, so the picker is not
+     * created at all rather than shown with one option.
+     */
+    if (!featureEnabled('mapStyle')) {
+        return null;
+    }
+
     let control =
         $('mapStyleControl');
 

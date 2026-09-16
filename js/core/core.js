@@ -42,6 +42,53 @@ let MAP_ASSETS = {};
 let drag = null;
 let pan = null;
 
+
+/* =========================
+   FEATURE SWITCHES
+   ========================= */
+
+/*
+ * The standalone build (scripts/build-single-file.mjs) ships a reduced
+ * calculator: one language, one map style, no accessibility panel, no drawing
+ * tools, no import/export and no message of the day. It sets
+ * window.__WARDOGS_FEATURES__ before any application script runs.
+ *
+ * Every switch defaults to on and is only skipped when it is explicitly set to
+ * false, so the hosted site and the offline mirror keep their full interface.
+ */
+const APP_FEATURES = {
+    locales: true,
+    mapStyle: true,
+    accessibility: true,
+    drawingTools: true,
+    dataTransfer: true,
+    motd: true,
+
+    ...(
+        typeof window !== 'undefined' &&
+        window.__WARDOGS_FEATURES__ &&
+        typeof window.__WARDOGS_FEATURES__ === 'object'
+            ? window.__WARDOGS_FEATURES__
+            : {}
+    )
+};
+
+function featureEnabled(name) {
+
+    return APP_FEATURES[name] !== false;
+}
+
+/*
+ * Set by the same build when only one language is embedded: the interface is
+ * then locked to it instead of following the browser language.
+ */
+const APP_LANGUAGE =
+    typeof window !== 'undefined' &&
+    typeof window.__WARDOGS_LANGUAGE__ === 'string' &&
+    window.__WARDOGS_LANGUAGE__
+        ? window.__WARDOGS_LANGUAGE__
+        : '';
+
 let savedTargets = [];
 
 const SAVED_TARGETS_KEY =

@@ -79,8 +79,12 @@ main {
 
     display: grid;
 
+    /*
+     * One variable drives both the sidebar column and the collapse toggle, so
+     * dragging the resizer keeps the toggle glued to the sidebar edge.
+     */
     grid-template-columns:
-        290px
+        var(--sidebar-width, 290px)
         minmax(0, 1fr);
 
     transition:
@@ -91,6 +95,80 @@ main.sidebar-collapsed {
     grid-template-columns:
         0
         minmax(0, 1fr);
+}
+
+/*
+ * While the resizer is dragged the layout has to follow the pointer exactly:
+ * the collapse animation would otherwise lag a quarter of a second behind it.
+ */
+main.sidebar-resizing {
+    transition: none;
+}
+
+main.sidebar-resizing .sidebar-toggle,
+main.sidebar-resizing > aside {
+    transition: none;
+}
+
+body.sidebar-resizing {
+    cursor: col-resize;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+
+/* =========================
+   SIDEBAR RESIZER
+   ========================= */
+
+.sidebar-resizer {
+    position: absolute;
+
+    left: calc(var(--sidebar-width, 290px) - 4px);
+    top: 0;
+    bottom: 0;
+
+    z-index: 25;
+
+    width: 9px;
+
+    cursor: col-resize;
+
+    background: transparent;
+
+    /* Pointer events must not turn into map panning or text selection. */
+    touch-action: none;
+}
+
+.sidebar-resizer::after {
+    content: '';
+
+    position: absolute;
+
+    left: 4px;
+    top: 0;
+    bottom: 0;
+
+    width: 1px;
+
+    background: transparent;
+
+    transition: background-color .15s ease;
+}
+
+.sidebar-resizer:hover::after,
+.sidebar-resizer:focus-visible::after,
+main.sidebar-resizing .sidebar-resizer::after {
+    background: var(--accent);
+}
+
+.sidebar-resizer:focus-visible {
+    outline: none;
+}
+
+main.sidebar-collapsed .sidebar-resizer,
+.mobile-app .sidebar-resizer {
+    display: none;
 }
 
 
@@ -141,7 +219,7 @@ main.sidebar-collapsed > aside {
 .sidebar-toggle {
     position: absolute;
 
-    left: 290px;
+    left: var(--sidebar-width, 290px);
     top: 50%;
 
     z-index: 30;

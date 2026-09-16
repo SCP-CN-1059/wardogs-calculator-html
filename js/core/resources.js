@@ -12,6 +12,190 @@ function resourceURL(path) {
     ).href;
 }
 
+
+/* =========================
+   SINGLE-FILE REGISTRY
+   ========================= */
+
+/*
+ * scripts/build-single-file.mjs emits one self-contained HTML file whose map
+ * configuration, marker artwork and tile pixels are embedded as data URIs:
+ *
+ *   window.__WARDOGS_INLINE__ = {
+ *       single: true,
+ *       json:  { 'maps/index.json': {...}, 'config/app.json': {...}, ... },
+ *       files: { 'assets/map-markers/tower.webp': 'data:image/webp;base64,...' },
+ *       tiles: { 'bakurani:grayscale:7:12:34': 'data:image/jpeg;base64,...' }
+ *   }
+ *
+ * It is the only difference between the served build and that file: when the
+ * registry is present nothing is requested over the network, which is also
+ * what makes the standalone file work from file://, where fetch() is not
+ * available at all.
+ */
+
+const INLINE_REGISTRY =
+    typeof window !== 'undefined' &&
+    window.__WARDOGS_INLINE__ &&
+    typeof window.__WARDOGS_INLINE__ === 'object'
+        ? window.__WARDOGS_INLINE__
+        : null;
+
+function isSingleFileMode() {
+
+    return (
+        INLINE_REGISTRY
+            ?.single === true
+    );
+}
+
+function inlineJson(path) {
+
+    const registry =
+        INLINE_REGISTRY
+            ?.json;
+
+    if (
+        !registry ||
+        !Object.prototype.hasOwnProperty.call(
+            registry,
+            path
+        )
+    ) {
+        return null;
+    }
+
+    return registry[path];
+}
+
+function inlineFileURL(path) {
+
+    return (
+        INLINE_REGISTRY
+            ?.files
+            ?.[path] ||
+        ''
+    );
+}
+
+function inlineTileURL(
+    mapId,
+    styleId,
+    zoom,
+    x,
+    y
+) {
+
+    const tiles =
+        INLINE_REGISTRY
+            ?.tiles;
+
+    if (!tiles) {
+        return '';
+    }
+
+    return (
+        tiles[
+            `${mapId}:${styleId}:${zoom}:${x}:${y}`
+        ] ||
+        ''
+    );
+}
+
+/*
+ * The standalone build embeds a full-map base level plus detailed levels only
+ * around the tower cluster. Knowing the base level lets the renderer request
+ * that level when a detailed tile simply does not exist, so a view away from
+ * the towers degrades to a soft base image instead of a dark placeholder.
+ */
+function inlineBaseZoom(mapId) {
+
+    const configured =
+        Number(
+            INLINE_REGISTRY
+                ?.baseZoom
+                ?.[mapId]
+        );
+
+    return Number.isFinite(configured)
+        ? configured
+        : null;
+}
+
+function cloneInlineJson(value) {
+
+    if (
+        typeof structuredClone ===
+        'function'
+    ) {
+        return structuredClone(value);
+    }
+
+    return JSON.parse(
+        JSON.stringify(value)
+    );
+}
+
+
+/* =========================
+   OFFLINE ASSET MIRROR
+   ========================= */
+
+/*
+ * config/app.json -> offline.enabled
+ *
+ * When the flag is on, published release URLs are rewritten back to the
+ * paths the offline mirror uses inside the checkout:
+ *
+ *     https://assets.../releases/assets-v1/maps/tiles/bakurani
+ *         -> maps/tiles/bakurani
+ *
+ *     https://assets.../releases/assets-v1/data/terrain/bakurani/manifest.json
+ *         -> data/terrain/bakurani/manifest.json
+ *
+ * Everything after /releases/<release>/ is the checkout-relative path, which
+ * is exactly the layout scripts/fetch-map-tiles.mjs mirrors. Relative paths
+ * (terrain-correction payloads, marker artwork, map JSON) are already local
+ * and pass through untouched.
+ */
+
+const OFFLINE_RELEASE_PATTERN =
+    /\/releases\/[^/]+\/(.+)$/;
+
+function isOfflineMode() {
+
+    return (
+        APP_CONFIG
+            ?.offline
+            ?.enabled === true
+    );
+}
+
+function offlineResourcePath(path) {
+
+    const value =
+        String(path ?? '');
+
+    if (
+        !value ||
+        !isOfflineMode() ||
+        !/^https?:\/\//i.test(value)
+    ) {
+        return value;
+    }
+
+    const match =
+        value.match(
+            OFFLINE_RELEASE_PATTERN
+        );
+
+    return (
+        match
+            ? match[1].replace(/\/+$/, '')
+            : value
+    );
+}
+
 function getStaticResourceVersion() {
     const script =
         document.querySelector(
@@ -150,6 +334,17 @@ function waitForStaticJsonRetry() {
 }
 
 async function fetchJSON(path) {
+
+    /*
+     * The standalone build answers every JSON request from the embedded
+     * registry, so it never depends on fetch() being allowed.
+     */
+    const inlined =
+        inlineJson(path);
+
+    if (inlined !== null) {
+        return cloneInlineJson(inlined);
+    }
 
     const resource =
         versionStaticResource(

@@ -66,6 +66,32 @@ canvas {
     cursor: crosshair;
 }
 
+/*
+ * While Space is held the primary button drags the camera instead of placing
+ * a point. The declarations are important because each Map Tool already
+ * installs its own canvas cursor for the same element.
+ */
+body.space-pan .map canvas {
+    cursor: grab !important;
+}
+
+body.space-pan .map canvas:active {
+    cursor: grabbing !important;
+}
+
+/*
+ * The right button places the artillery position, so a drag with it must not
+ * select text or start a native drag underneath the map.
+ */
+body.map-dragging {
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+body.map-dragging .map canvas {
+    cursor: crosshair;
+}
+
 
 /* =========================
    MAP FULLSCREEN

@@ -662,25 +662,478 @@ function installDesktopAccessibilityLauncher() {
             'footer-accessibility-button'
         );
 
-    const donations =
-        footerMeta.querySelector(
-            '.donation-links'
-        );
-
-    footerMeta.insertBefore(
-        launcher,
-        donations || null
+    footerMeta.appendChild(
+        launcher
     );
 
     syncAccessibilityLocalization();
 }
 
 function initAccessibility() {
+
+    /*
+     * The accessibility panel is one of the features the standalone build
+     * leaves out; it is never created, so no launcher is installed either.
+     */
+    if (!featureEnabled('accessibility')) {
+        return;
+    }
+
     ensureAccessibilityResultStatus();
     ensureAccessibilityDialog();
     installDesktopAccessibilityLauncher();
     syncAccessibilityLocalization();
 }
+
+/* =========================
+   SIDEBAR WIDTH
+   ========================= */
+
+/*
+ * The sidebar edge is draggable. A single CSS variable carries the width:
+ * the grid column and the collapse toggle both read it, so the layout, the
+ * canvas size and the toggle stay in step while the pointer moves.
+ *
+ * The value is stored per browser, like the collapsed state, and can be
+ * changed with the arrow keys (Shift for a bigger step) or reset by
+ * double-clicking the handle.
+ */
+const SIDEBAR_WIDTH_KEY =
+    'wardogs-sidebar-width';
+
+const SIDEBAR_WIDTH_DEFAULT = 290;
+const SIDEBAR_WIDTH_MIN = 220;
+const SIDEBAR_WIDTH_MAX = 560;
+
+/*
+ * How often the canvas may re-size while the resizer is dragged. Small enough
+ * to look continuous, large enough to avoid reallocating the bitmap on every
+ * pointer event.
+ */
+const SIDEBAR_RESIZE_THROTTLE_MS = 60;
+
+const SIDEBAR_RESIZE_LABELS = {
+    en: 'Drag to resize the sidebar',
+    'zh-cn': '拖动调整侧栏宽度',
+    ru: 'Перетащите, чтобы изменить ширину панели',
+    uk: 'Перетягніть, щоб змінити ширину панелі',
+    de: 'Ziehen, um die Breite der Seitenleiste zu ändern',
+    fr: 'Glisser pour redimensionner la barre latérale',
+    es: 'Arrastra para cambiar el ancho de la barra lateral',
+    pl: 'Przeciągnij, aby zmienić szerokość panelu',
+    pt: 'Arraste para redimensionar a barra lateral',
+    ja: 'ドラッグしてサイドバーの幅を変更',
+    ko: '드래그하여 사이드바 너비 조정',
+    cat: 'Arrossega per redimensionar la barra lateral'
+};
+
+function sidebarResizeLabel() {
+
+    return (
+        SIDEBAR_RESIZE_LABELS[
+            typeof LANG === 'string'
+                ? LANG
+                : 'en'
+        ] ||
+        SIDEBAR_RESIZE_LABELS.en
+    );
+}
+
+function getSidebarMaxWidth() {
+
+    /*
+     * Never let the sidebar eat the map: on a narrow window the maximum
+     * follows the viewport.
+     */
+    return Math.max(
+        SIDEBAR_WIDTH_MIN,
+        Math.min(
+            SIDEBAR_WIDTH_MAX,
+            Math.round(
+                window.innerWidth * 0.6
+            )
+        )
+    );
+}
+
+function applySidebarWidth(width) {
+
+    const clamped =
+        Math.max(
+            SIDEBAR_WIDTH_MIN,
+            Math.min(
+                getSidebarMaxWidth(),
+                Math.round(
+                    Number(width) ||
+                    SIDEBAR_WIDTH_DEFAULT
+                )
+            )
+        );
+
+    document.documentElement
+        .style
+        .setProperty(
+            '--sidebar-width',
+            `${clamped}px`
+        );
+
+    return clamped;
+}
+
+function loadSidebarWidth() {
+
+    try {
+
+        const stored =
+            Number(
+                localStorage.getItem(
+                    SIDEBAR_WIDTH_KEY
+                )
+            );
+
+        if (
+            Number.isFinite(stored) &&
+            stored >= SIDEBAR_WIDTH_MIN
+        ) {
+            return applySidebarWidth(
+                stored
+            );
+        }
+
+    } catch (error) {
+        // Storage is optional.
+    }
+
+    return applySidebarWidth(
+        SIDEBAR_WIDTH_DEFAULT
+    );
+}
+
+function persistSidebarWidth(width) {
+
+    try {
+
+        localStorage.setItem(
+            SIDEBAR_WIDTH_KEY,
+            String(width)
+        );
+
+    } catch (error) {
+        // Storage is optional.
+    }
+}
+
+function initSidebarResizer() {
+
+    const main =
+        document.querySelector('main');
+
+    if (
+        !main ||
+        main.querySelector('.sidebar-resizer')
+    ) {
+        return;
+    }
+
+    const handle =
+        document.createElement('div');
+
+    handle.className =
+        'sidebar-resizer';
+
+    handle.setAttribute(
+        'role',
+        'separator'
+    );
+
+    handle.setAttribute(
+        'aria-orientation',
+        'vertical'
+    );
+
+    handle.tabIndex = 0;
+
+    main.appendChild(handle);
+
+    let width =
+        loadSidebarWidth();
+
+    let dragStart = null;
+    let lastResizeAt = 0;
+    let resizeTimer = null;
+
+    const nowMs = () =>
+        typeof performance !== 'undefined' &&
+        typeof performance.now === 'function'
+            ? performance.now()
+            : Date.now();
+
+    const applyResize = () => {
+
+        lastResizeAt = nowMs();
+
+        if (
+            typeof resize ===
+            'function'
+        ) {
+            resize();
+        }
+    };
+
+    /*
+     * The canvas has to be told that the workspace changed: its backing store
+     * is only re-sized by resize(), which also redraws the map. Reallocating
+     * that bitmap on every pointer event would be wasteful, so calls are
+     * throttled — with a trailing timer rather than requestAnimationFrame,
+     * which does not run while a page is not producing frames.
+     */
+    const relayout = (force = false) => {
+
+        const elapsed =
+            nowMs() - lastResizeAt;
+
+        if (
+            !force &&
+            elapsed < SIDEBAR_RESIZE_THROTTLE_MS
+        ) {
+
+            if (resizeTimer === null) {
+
+                resizeTimer =
+                    window.setTimeout(
+                        () => {
+
+                            resizeTimer = null;
+
+                            relayout(true);
+                        },
+                        SIDEBAR_RESIZE_THROTTLE_MS -
+                        elapsed +
+                        5
+                    );
+            }
+
+            return;
+        }
+
+        if (resizeTimer !== null) {
+
+            window.clearTimeout(
+                resizeTimer
+            );
+
+            resizeTimer = null;
+        }
+
+        applyResize();
+    };
+
+    const setWidth = (
+        value,
+        persist,
+        force = false
+    ) => {
+
+        width =
+            applySidebarWidth(value);
+
+        if (persist) {
+            persistSidebarWidth(width);
+        }
+
+        relayout(force);
+    };
+
+    handle.addEventListener(
+        'pointerdown',
+        event => {
+
+            if (
+                event.button !== 0 ||
+                isSidebarCollapsed()
+            ) {
+                return;
+            }
+
+            event.preventDefault();
+            event.stopPropagation();
+
+            dragStart = {
+                x: event.clientX,
+                width
+            };
+
+            main.classList.add(
+                'sidebar-resizing'
+            );
+
+            document.body
+                .classList
+                .add('sidebar-resizing');
+
+            try {
+
+                handle.setPointerCapture(
+                    event.pointerId
+                );
+
+            } catch (error) {
+                // A pointer capture is a convenience, not a requirement.
+            }
+        }
+    );
+
+    handle.addEventListener(
+        'pointermove',
+        event => {
+
+            if (!dragStart) {
+                return;
+            }
+
+            event.preventDefault();
+
+            setWidth(
+                dragStart.width +
+                (
+                    event.clientX -
+                    dragStart.x
+                ),
+                false
+            );
+        }
+    );
+
+    const endDrag = event => {
+
+        if (!dragStart) {
+            return;
+        }
+
+        dragStart = null;
+
+        main.classList.remove(
+            'sidebar-resizing'
+        );
+
+        document.body
+            .classList
+            .remove('sidebar-resizing');
+
+        if (
+            event &&
+            event.pointerId !== undefined
+        ) {
+
+            try {
+
+                handle.releasePointerCapture(
+                    event.pointerId
+                );
+
+            } catch (error) {
+                // The capture may already be gone.
+            }
+        }
+
+        persistSidebarWidth(width);
+
+        /* One last, unthrottled re-size so the map is crisp after the drag. */
+        relayout(true);
+    };
+
+    handle.addEventListener(
+        'pointerup',
+        endDrag
+    );
+
+    handle.addEventListener(
+        'pointercancel',
+        endDrag
+    );
+
+    handle.addEventListener(
+        'dblclick',
+        () => {
+
+            setWidth(
+                SIDEBAR_WIDTH_DEFAULT,
+                true,
+                true
+            );
+        }
+    );
+
+    handle.addEventListener(
+        'keydown',
+        event => {
+
+            const key =
+                getKeyboardShortcutKey(
+                    event
+                );
+
+            if (
+                key !== 'arrowleft' &&
+                key !== 'arrowright'
+            ) {
+                return;
+            }
+
+            event.preventDefault();
+
+            const step =
+                event.shiftKey
+                    ? 40
+                    : 12;
+
+            setWidth(
+                width +
+                (
+                    key === 'arrowright'
+                        ? step
+                        : -step
+                ),
+                true,
+                true
+            );
+        }
+    );
+
+    /* A narrower window can make a stored width too wide for the map. */
+    window.addEventListener(
+        'resize',
+        () => {
+
+            setWidth(
+                width,
+                false,
+                true
+            );
+        }
+    );
+
+    /*
+     * The reliable half of this arrangement: the observer fires after the map
+     * area has actually changed size, whatever caused it — a drag, the arrow
+     * keys, a window resize or the collapse toggle. It removes any dependency
+     * on when the grid happened to settle.
+     */
+    if (typeof ResizeObserver === 'function') {
+
+        const observed =
+            document.querySelector('.workspace') ||
+            main;
+
+        const observer =
+            new ResizeObserver(
+                () => applyResize()
+            );
+
+        observer.observe(observed);
+    }
+}
+
 
 function isSidebarCollapsed() {
 
@@ -733,6 +1186,29 @@ function updateSidebarToggle() {
 
     const button =
         $('sidebarToggle');
+
+    /*
+     * The resizer is a separator for assistive technology, so it carries the
+     * same label sync as the toggle (and follows a language change with it).
+     */
+    const resizer =
+        document.querySelector(
+            '.sidebar-resizer'
+        );
+
+    if (resizer) {
+
+        const resizeLabel =
+            sidebarResizeLabel();
+
+        resizer.title =
+            resizeLabel;
+
+        resizer.setAttribute(
+            'aria-label',
+            resizeLabel
+        );
+    }
 
     if (!button) {
         return;
@@ -1450,27 +1926,17 @@ function createMobileCreditsBlock() {
         )
     );
 
-    const authorLink =
+    const authorName =
         document.createElement(
-            'a'
+            'strong'
         );
 
-    authorLink.href =
-        config.authorUrl ||
-        '#';
-
-    authorLink.target =
-        '_blank';
-
-    authorLink.rel =
-        'noopener noreferrer';
-
-    authorLink.textContent =
+    authorName.textContent =
         config.authorName ||
         'Apollyon';
 
     creditLine.appendChild(
-        authorLink
+        authorName
     );
 
     if (config.version) {
@@ -1569,11 +2035,6 @@ function initMobileSideMenu() {
 
     const desktopLink =
         $('mobileDesktopVersion');
-
-    const partnerLink =
-        document.querySelector(
-            '.mobile-partner-link'
-        );
 
     const toggle =
         createMobileSideMenuToggle();
@@ -1824,18 +2285,34 @@ function initMobileSideMenu() {
         );
     }
 
-    if (partnerLink) {
+    /*
+     * The repository is the only external link the interface carries.
+     */
+    if (
+        typeof createRepositoryLink ===
+        'function'
+    ) {
+        const repositoryLink =
+            createRepositoryLink(
+                'mobile-menu'
+            );
 
-        partnerLink.dataset
-            .umamiEventPlacement =
-            'mobile-menu';
-
-        partnerLink.classList.add(
+        repositoryLink.classList.add(
             'mobile-side-menu-link-card'
         );
 
+        repositoryLink.addEventListener(
+            'click',
+            () => {
+
+                setMobileSideMenuOpen(
+                    false
+                );
+            }
+        );
+
         links.appendChild(
-            partnerLink
+            repositoryLink
         );
     }
 
@@ -1847,11 +2324,6 @@ function initMobileSideMenu() {
         createMobileMenuSection(
             'mobileSupportLabel',
             'mobile-side-menu-support'
-        );
-
-    const donationLinks =
-        createDonationLinks(
-            'mobile-menu'
         );
 
     if (
@@ -1878,11 +2350,11 @@ function initMobileSideMenu() {
         supportSection.appendChild(
             feedbackButton
         );
-    }
 
-    supportSection.appendChild(
-        donationLinks
-    );
+        menu.append(
+            supportSection
+        );
+    }
 
     const footer =
         createMobileCreditsBlock();
@@ -1893,7 +2365,6 @@ function initMobileSideMenu() {
         appearanceSection,
         accessibilitySection,
         linksSection,
-        supportSection,
         footer
     );
 
@@ -1946,34 +2417,6 @@ function initMobileSideMenu() {
 
                 setMobileSideMenuOpen(
                     false
-                );
-            }
-        );
-
-    partnerLink
-        ?.addEventListener(
-            'click',
-            () => {
-
-                setMobileSideMenuOpen(
-                    false
-                );
-            }
-        );
-
-    donationLinks
-        .querySelectorAll(
-            '.donation-link'
-        )
-        .forEach(
-            link => {
-                link.addEventListener(
-                    'click',
-                    () => {
-                        setMobileSideMenuOpen(
-                            false
-                        );
-                    }
                 );
             }
         );
@@ -2659,6 +3102,8 @@ function initLayout() {
             loadSidebarState(),
             false
         );
+
+        initSidebarResizer();
 
         initDesktopSavedTargetsCollapse();
 

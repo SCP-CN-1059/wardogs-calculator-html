@@ -30,6 +30,41 @@ async function loadLanguages() {
     }
 
     /*
+     * Single-language builds (the standalone file) embed one catalog and lock
+     * the interface to it: no language selector, no picker, no locale routes.
+     */
+    if (!featureEnabled('locales')) {
+
+        const locked =
+            LANGUAGES.find(
+                language =>
+                    language.id ===
+                    (
+                        APP_LANGUAGE ||
+                        DEFAULT_LANG
+                    )
+            ) ||
+            LANGUAGES[0];
+
+        LANG =
+            locked.id;
+
+        DEFAULT_LANG =
+            locked.id;
+
+        LANGUAGES = [
+            locked
+        ];
+
+        I18N[locked.id] =
+            await fetchJSON(
+                `locales/${locked.file}`
+            );
+
+        return;
+    }
+
+    /*
      * Pick the active language from the lightweight index first. The picker
      * navigates to dedicated locale URLs, so startup only needs the active
      * catalog plus the default fallback instead of downloading every locale.
@@ -71,8 +106,13 @@ async function loadLanguages() {
 
     populateLanguageSelect();
 
-    $('language').value =
-        LANG;
+    const languageSelect =
+        $('language');
+
+    if (languageSelect) {
+        languageSelect.value =
+            LANG;
+    }
 
     buildLanguagePicker();
 }
@@ -81,6 +121,10 @@ function populateLanguageSelect() {
 
     const select =
         $('language');
+
+    if (!select) {
+        return;
+    }
 
     select.innerHTML = '';
 
@@ -707,7 +751,7 @@ function getLanguagePageURL(languageId) {
     ).href;
 }
 
-function switchLanguage(languageId) {
+async function switchLanguage(languageId) {
 
     try {
 
@@ -722,6 +766,52 @@ function switchLanguage(languageId) {
             'Failed to save language preference:',
             error
         );
+    }
+
+    /*
+     * The standalone build is a single file: there are no /<locale>/ routes to
+     * navigate to, so the catalog is swapped in place instead. Every catalog
+     * is embedded, so the lookup resolves without touching the network.
+     */
+    if (
+        typeof isSingleFileMode === 'function' &&
+        isSingleFileMode()
+    ) {
+
+        const language =
+            LANGUAGES.find(
+                item =>
+                    item.id ===
+                    languageId
+            );
+
+        if (!language?.file) {
+            return;
+        }
+
+        try {
+
+            I18N[languageId] =
+                await fetchJSON(
+                    `locales/${language.file}`
+                );
+
+        } catch (error) {
+
+            console.warn(
+                `Language ${languageId} could not be loaded:`,
+                error
+            );
+
+            return;
+        }
+
+        LANG =
+            languageId;
+
+        applyLanguage();
+
+        return;
     }
 
     window.location.href =
@@ -755,8 +845,13 @@ function applyStaticLanguage() {
             }
         });
 
-    $('language').value =
-        LANG;
+    const staticLanguageSelect =
+        $('language');
+
+    if (staticLanguageSelect) {
+        staticLanguageSelect.value =
+            LANG;
+    }
 
     updateLanguagePicker();
     updateThemeButton();

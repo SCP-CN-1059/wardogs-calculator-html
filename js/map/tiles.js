@@ -176,6 +176,23 @@ function getTileURL(
     styleId = getMapTileStyleId(map)
 ) {
 
+    /*
+     * The standalone build embeds the tile pixels themselves. The lookup runs
+     * first so no URL is ever assembled for it.
+     */
+    const embedded =
+        inlineTileURL(
+            map?.id,
+            styleId,
+            zoom,
+            x,
+            y
+        );
+
+    if (embedded) {
+        return embedded;
+    }
+
     const tiles =
         getTileConfig(
             map,
@@ -186,8 +203,22 @@ function getTileURL(
         return null;
     }
 
+    /*
+     * Only the embedded tiles exist inside the standalone file, so a tile it
+     * does not carry must not turn into a network request. The renderer draws
+     * the cached lower-resolution ancestor instead.
+     */
+    if (isSingleFileMode()) {
+        return null;
+    }
+
+    /*
+     * Offline mode swaps the CDN prefix for the mirrored copy inside the
+     * checkout (maps/tiles, maps/tiles-color); online it returns the
+     * published URL unchanged.
+     */
     return resourceURL(
-        `${tiles.path}/zoom_${zoom}/${x}_${y}.${tiles.extension}`
+        `${offlineResourcePath(tiles.path)}/zoom_${zoom}/${x}_${y}.${tiles.extension}`
     );
 }
 
@@ -284,6 +315,25 @@ function startTileRequest(tile) {
         y
     } = tile.request;
 
+    const url =
+        tile.request.url ||
+        getTileURL(
+            map,
+            zoom,
+            x,
+            y,
+            styleId
+        );
+
+    if (!url) {
+        finishTileRequest(
+            tile,
+            true
+        );
+
+        return;
+    }
+
     const image =
         new Image();
 
@@ -332,13 +382,7 @@ function startTileRequest(tile) {
             }
 
             console.warn(
-                `Failed to load tile after retry: ${getTileURL(
-                    map,
-                    zoom,
-                    x,
-                    y,
-                    styleId
-                )}`
+                `Failed to load tile after retry: ${url}`
             );
 
             if (
@@ -364,13 +408,7 @@ function startTileRequest(tile) {
         };
 
     image.src =
-        getTileURL(
-            map,
-            zoom,
-            x,
-            y,
-            styleId
-        );
+        url;
 }
 
 function pumpTileLoadQueue() {
@@ -463,6 +501,7 @@ function loadTile(
         }
 
         if (
+            !cached.unavailable &&
             !cached.loaded &&
             !cached.failed &&
             !cached.loading &&
@@ -481,6 +520,13 @@ function loadTile(
         image: null,
         loaded: false,
         failed: false,
+
+        /*
+         * "unavailable" is not a failure: the standalone build simply does not
+         * carry this tile. Keeping failed = false is what lets the renderer
+         * keep looking for a usable lower-resolution ancestor.
+         */
+        unavailable: false,
         loading: false,
         queued: false,
         retryPending: false,
@@ -496,7 +542,18 @@ function loadTile(
             styleId,
             zoom,
             x,
-            y
+            y,
+
+            /*
+             * Resolved once: a standalone build hands back a multi-kilobyte
+             * data URI, and draws happen many times per second.
+             */
+            url: getTileURL(
+                map,
+                zoom,
+                x,
+                y
+            )
         }
     };
 
@@ -505,11 +562,65 @@ function loadTile(
         tile
     );
 
+    if (!tile.request.url) {
+
+        /*
+         * Nothing to fetch: the standalone build embeds only the tiles it
+         * ships. The renderer draws the base level for this ground instead,
+         * and requests it when it is not cached yet.
+         */
+        tile.unavailable = true;
+
+        return tile;
+    }
+
     queueTileLoad(
         tile
     );
 
     return tile;
+}
+
+
+/*
+ * Standalone builds embed a full-map base level plus detailed levels only
+ * around the tower cluster. When a detailed tile does not exist at all, the
+ * base-level tile covering the same ground is requested so the next frame can
+ * paint a soft but usable picture through findCachedTileAncestor().
+ */
+function requestInlineFallbackTile(
+    map,
+    zoom,
+    x,
+    y,
+    queueEpoch
+) {
+
+    const baseZoom =
+        inlineBaseZoom(
+            map?.id
+        );
+
+    if (
+        baseZoom === null ||
+        baseZoom >= zoom
+    ) {
+        return;
+    }
+
+    const scale =
+        Math.pow(
+            2,
+            zoom - baseZoom
+        );
+
+    loadTile(
+        map,
+        baseZoom,
+        Math.floor(x / scale),
+        Math.floor(y / scale),
+        -queueEpoch * 1000000 - 500000
+    );
 }
 
 
@@ -947,6 +1058,22 @@ function drawTileMap(map) {
                     );
 
                 } else {
+
+                    /*
+                     * Standalone builds: no detailed tile and no cached
+                     * ancestor means the base level has not been requested for
+                     * this ground yet. Ask for it now; the next frame draws it
+                     * through the ancestor path.
+                     */
+                    if (isSingleFileMode()) {
+                        requestInlineFallbackTile(
+                            map,
+                            zoom,
+                            tileX,
+                            tileY,
+                            queueEpoch
+                        );
+                    }
 
                     ctx.fillStyle =
                         '#151a1d';

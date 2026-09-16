@@ -661,6 +661,25 @@ async function importMapToolChanges() {
 }
 
 function setMapTool(tool) {
+
+    /*
+     * Drawing and annotation tools are left out of the standalone build. The
+     * guard sits here, on the single entry point every button and shortcut
+     * goes through, so their shortcuts cannot arm a tool that has no button.
+     */
+    if (
+        !featureEnabled('drawingTools') &&
+        [
+            'pencil',
+            'zone',
+            'polygon',
+            'eraser',
+            'marker'
+        ].includes(tool)
+    ) {
+        return;
+    }
+
     MAP_TOOL_STATE.tool =
         MAP_TOOL_STATE.tool === tool
             ? null
@@ -2076,8 +2095,16 @@ function ensureMapHistoryTools() {
 }
 
 function updateMapToolsLocalization() {
-    ensureMapShapeTools();
-    ensureMapHistoryTools();
+
+    /*
+     * These two build the Zone/Polygon and Undo/Redo buttons on demand. The
+     * standalone build leaves the drawing tools out, so the buttons are never
+     * created there.
+     */
+    if (featureEnabled('drawingTools')) {
+        ensureMapShapeTools();
+        ensureMapHistoryTools();
+    }
 
     const undoButton =
         $('mapToolUndoButton');

@@ -13,11 +13,19 @@ import { SEO_ALTERNATE_NAMES, SEO_PAGE_CONTENT } from './seo-content.mjs';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const root = resolve(__dirname, '..');
 const dist = join(root, 'dist');
-const localTilesDirectory = join(root, 'maps', 'tiles');
+const localTilesDirectories = [
+    join(root, 'maps', 'tiles'),
+    join(root, 'maps', 'tiles-color')
+];
 const localTerrainPrefix = join(root, 'data', 'terrain') + sep;
 
 function includeSharedSource(sourcePath) {
-    if (sourcePath === localTilesDirectory) return false;
+    /*
+     * Both locally mirrored pyramids (black & white and color) are working
+     * data: they belong to the offline workflow only and are published to R2
+     * for the hosted build. See docs/offline.md.
+     */
+    if (localTilesDirectories.includes(sourcePath)) return false;
     if (!sourcePath.startsWith(localTerrainPrefix)) return true;
 
     const terrainParts = sourcePath

@@ -434,7 +434,7 @@
 .mobile-app .mobile-side-menu
 .mobile-desktop-link,
 .mobile-app .mobile-side-menu
-.mobile-partner-link {
+.footer-repository-link {
     width: 100%;
     min-height: 48px;
 
@@ -466,30 +466,13 @@
 .mobile-app .mobile-side-menu
 .mobile-desktop-link:focus-visible,
 .mobile-app .mobile-side-menu
-.mobile-partner-link:hover,
+.footer-repository-link:hover,
 .mobile-app .mobile-side-menu
-.mobile-partner-link:focus-visible {
+.footer-repository-link:focus-visible {
     border-color: var(--accent-border);
 
     background: var(--active-bg);
     color: var(--accent);
-}
-
-.mobile-app .mobile-side-menu
-.mobile-partner-link strong {
-    margin-left: 4px;
-
-    color: var(--accent);
-}
-
-.mobile-side-menu-support
-.donation-links-mobile-menu {
-    display: grid;
-
-    grid-template-columns:
-        minmax(0, 1fr);
-
-    gap: 7px;
 }
 
 .mobile-app .mobile-side-menu
@@ -518,30 +501,6 @@
     height: 18px;
 
     flex: 0 0 18px;
-}
-
-.mobile-app .mobile-side-menu
-.donation-link {
-    width: 100%;
-    min-height: 48px;
-
-    margin: 0;
-    padding: 0 12px;
-
-    gap: 8px;
-
-    border-radius: 8px;
-
-    font-size: 11px;
-    line-height: 1.3;
-}
-
-.mobile-app .mobile-side-menu
-.donation-link-icon {
-    width: 18px;
-    height: 18px;
-
-    flex-basis: 18px;
 }
 
 .mobile-side-menu-footer {

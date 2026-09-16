@@ -21,8 +21,8 @@ const DEFAULT_APP_CONFIG = {
                 'by',
             authorName:
                 'Apollyon',
-            authorUrl:
-                'https://discord.com/users/202109460238434304',
+            repositoryUrl:
+                'https://github.com/apollyon-sys/wardogs-calculator',
             version:
                 '1.9.0'
         }
@@ -80,6 +80,42 @@ function mergeAppConfig(base, override) {
     };
 }
 
+/*
+ * Offline mode has no reachable backend: the collaboration server and the
+ * feedback endpoint both live on the internet. A session that starts without
+ * a connection must not spend its first seconds discovering that, so the
+ * runtime overrides those two blocks while the published config keeps them
+ * for the hosted deployment.
+ *
+ * See docs/offline.md.
+ */
+function applyOfflineOverrides(config) {
+
+    if (
+        config
+            ?.offline
+            ?.enabled !== true
+    ) {
+        return config;
+    }
+
+    return {
+        ...config,
+
+        collab: {
+            ...(config.collab || {}),
+            enabled: false,
+            serverUrl: ''
+        },
+
+        feedback: {
+            ...(config.feedback || {}),
+            enabled: false,
+            serverUrl: ''
+        }
+    };
+}
+
 async function loadAppConfig() {
     try {
         const loaded =
@@ -88,9 +124,11 @@ async function loadAppConfig() {
             );
 
         APP_CONFIG =
-            mergeAppConfig(
-                DEFAULT_APP_CONFIG,
-                loaded
+            applyOfflineOverrides(
+                mergeAppConfig(
+                    DEFAULT_APP_CONFIG,
+                    loaded
+                )
             );
     } catch (error) {
         console.warn(

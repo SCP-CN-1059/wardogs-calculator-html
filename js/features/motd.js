@@ -678,40 +678,61 @@ function updateMotdLocalization() {
         label;
 }
 
-async function loadMotd() {
-    try {
-        const resource =
-            versionStaticResource(
-                resourceURL(
-                    'data/motd.json'
-                )
-            );
+async function fetchMotdPayload() {
 
-        const response =
-            await fetch(
-                resource.url,
-                {
-                    cache:
-                        resource.versioned
-                            ? 'force-cache'
-                            : 'no-cache'
-                }
-            );
+    const resource =
+        versionStaticResource(
+            resourceURL(
+                'data/motd.json'
+            )
+        );
 
-        if (!response.ok) {
-            if (
-                response.status !== 404
-            ) {
-                console.warn(
-                    `Failed to load MOTD: ${response.status}`
-                );
+    const response =
+        await fetch(
+            resource.url,
+            {
+                cache:
+                    resource.versioned
+                        ? 'force-cache'
+                        : 'no-cache'
             }
+        );
 
-            return null;
+    if (!response.ok) {
+
+        if (
+            response.status !== 404
+        ) {
+            console.warn(
+                `Failed to load MOTD: ${response.status}`
+            );
         }
 
+        return null;
+    }
+
+    return response.json();
+}
+
+async function loadMotd() {
+    try {
+        /*
+         * The standalone build embeds the announcement with everything else,
+         * so the registry is consulted first and fetch() stays out of the
+         * picture where it is not available.
+         */
+        const embedded =
+            typeof inlineJson === 'function'
+                ? inlineJson('data/motd.json')
+                : null;
+
         const motd =
-            await response.json();
+            embedded ||
+            await fetchMotdPayload();
+
+        if (!motd) {
+            return null;
+        }
 
         if (
             !isMotdActive(
@@ -751,6 +772,12 @@ async function loadMotd() {
 }
 
 async function initMotd() {
+
+    /* The standalone build ships without the announcement feature. */
+    if (!featureEnabled('motd')) {
+        return;
+    }
+
     const motd =
         await loadMotd();
 

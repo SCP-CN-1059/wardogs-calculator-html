@@ -90,6 +90,15 @@ function contourRampColor(fraction) {
 const CONTOUR_CACHE = new Map();
 
 function mapHasContours(mapId) {
+
+    /*
+     * The standalone build carries no contour data, so its Layers popover
+     * must not offer a toggle that cannot work.
+     */
+    if (isSingleFileMode()) {
+        return false;
+    }
+
     return CONTOUR_MAP_IDS.includes(mapId);
 }
 

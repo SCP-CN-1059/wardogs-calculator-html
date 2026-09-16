@@ -3,9 +3,13 @@
   "private": true,
   "scripts": {
     "build": "node scripts/build-pages.mjs && node scripts/sync-locales.mjs && node scripts/version-assets.mjs",
+    "build:single": "node scripts/build-single-file.mjs",
     "dev": "node scripts/dev-server.mjs",
+    "offline": "node scripts/offline-server.mjs",
+    "mirror": "node scripts/fetch-map-tiles.mjs",
+    "mirror:verify": "node scripts/fetch-map-tiles.mjs --verify --terrain",
     "build-contours": "node scripts/build-contours.mjs",
-    "test:scripts": "node --test scripts/lib/contours.test.mjs scripts/lib/dev-server-security.test.mjs",
+    "test:scripts": "node --test scripts/lib/contours.test.mjs scripts/lib/dev-server-security.test.mjs scripts/lib/offline-paths.test.mjs",
     "test:build": "node scripts/verify-build.mjs"
   }
 }

@@ -2,6 +2,115 @@
    EVENTS
    ========================= */
 
+/* =========================
+   MAP POINTER GUARD
+   ========================= */
+
+/*
+ * The right button is a map gesture of its own now: it places the artillery
+ * position. The browser must not run one at the same time — no context menu on
+ * release, no text selection, no native drag.
+ *
+ * Two things make that reliable:
+ *
+ *   1. a document-level contextmenu guard, because the menu is raised for the
+ *      element under the pointer when the button comes up, which after a drag
+ *      is frequently *not* the canvas;
+ *   2. pointer capture on the canvas, so the whole drag, including a release
+ *      over the sidebar or outside the map, is delivered to the map.
+ */
+
+let mapPointerCapture = null;
+
+/*
+ * The compatibility contextmenu event arrives after the button came up, so the
+ * drag state is already cleared by then. A short grace window keeps the menu
+ * suppressed for a release that happened over the sidebar or off the canvas.
+ */
+let mapContextMenuGuardUntil = 0;
+
+function holdContextMenuGuard() {
+
+    mapContextMenuGuardUntil =
+        Date.now() + 600;
+}
+
+function beginMapPointerCapture(element, pointerId) {
+
+    endMapPointerCapture();
+
+    document.body
+        ?.classList
+        .add('map-dragging');
+
+    try {
+
+        element.setPointerCapture(
+            pointerId
+        );
+
+        mapPointerCapture = {
+            element,
+            pointerId
+        };
+
+    } catch (error) {
+
+        /*
+         * Capture is a convenience: without it the drag still works while the
+         * pointer stays over the canvas.
+         */
+        mapPointerCapture = null;
+    }
+}
+
+function endMapPointerCapture() {
+
+    document.body
+        ?.classList
+        .remove('map-dragging');
+
+    if (!mapPointerCapture) {
+        return;
+    }
+
+    const {
+        element,
+        pointerId
+    } = mapPointerCapture;
+
+    mapPointerCapture = null;
+
+    try {
+
+        if (
+            typeof element.hasPointerCapture ===
+                'function' &&
+            element.hasPointerCapture(pointerId)
+        ) {
+            element.releasePointerCapture(
+                pointerId
+            );
+        }
+
+    } catch (error) {
+        // The capture may already be gone.
+    }
+}
+
+/**
+ * True while a map drag or pan is in progress, whichever button started it.
+ */
+function isMapPointerBusy() {
+
+    return Boolean(
+        mapPointerCapture ||
+        pan ||
+        drag ||
+        Date.now() < mapContextMenuGuardUntil
+    );
+}
+
 function bindThemeToggle() {
 
     const toggle =
@@ -289,12 +398,16 @@ function bindEvents() {
             }
         );
 
-    $('language').addEventListener(
+    $('language')?.addEventListener(
         'change',
         () => {
 
             const language =
-                $('language').value;
+                $('language')?.value;
+
+            if (!language) {
+                return;
+            }
 
             switchLanguage(
                 language
@@ -592,6 +705,54 @@ function bindEvents() {
        CANVAS
        ========================= */
 
+    /*
+     * Pointer capture is taken on pointerdown rather than mousedown: only a
+     * pointer event carries a pointerId, and the capture is what keeps a drag
+     * alive — and the browser out of the way — after the pointer leaves the
+     * canvas.
+     */
+    c.addEventListener(
+        'pointerdown',
+        event => {
+
+            /*
+             * Touch gestures belong to the mobile interface, which tracks every
+             * finger itself; capturing one of them here would get in its way.
+             */
+            if (event.pointerType === 'touch') {
+                return;
+            }
+
+            if (
+                event.button !== 0 &&
+                event.button !== 1 &&
+                event.button !== 2
+            ) {
+                return;
+            }
+
+            beginMapPointerCapture(
+                c,
+                event.pointerId
+            );
+        }
+    );
+
+    ['pointerup', 'pointercancel'].forEach(
+        type => {
+
+            c.addEventListener(
+                type,
+                () => {
+
+                    holdContextMenuGuard();
+
+                    endMapPointerCapture();
+                }
+            );
+        }
+    );
+
     c.addEventListener(
         'mousedown',
         e => {
@@ -610,9 +771,24 @@ function bindEvents() {
                     rect.top
                 );
 
+            /*
+             * Mouse map:
+             *   middle drag, or Space + left drag  -> move the camera
+             *   right button                       -> move the artillery
+             *   left button                        -> move the target
+             *
+             * The two points therefore do not depend on which mode is
+             * selected, and the right button is no longer a pan gesture.
+             */
+            const spacePan =
+                e.button === 0 &&
+                typeof isSpacePanHeld ===
+                    'function' &&
+                isSpacePanHeld();
+
             if (
-                e.button ===
-                2
+                e.button === 1 ||
+                spacePan
             ) {
 
                 pan = {
@@ -665,15 +841,25 @@ function bindEvents() {
             }
 
             /*
-             * Point placement always follows the explicitly selected mode.
-             * The old 300 m nearest-point hit test could move the other
-             * marker when the user was trying to place a new point nearby.
-             * Existing points can still be repositioned by selecting their
-             * mode first and dragging/placing normally.
+             * The mode follows the point that was just placed, so the sidebar
+             * coordinate fields always edit what the mouse last touched.
              */
+            const pointType =
+                e.button === 2
+                    ? 'origin'
+                    : e.button === 0
+                        ? 'target'
+                        : null;
+
+            if (!pointType) {
+                drag = null;
+                updateCursor(e);
+                return;
+            }
+
             if (
                 isPointMapLocked(
-                    S.mode
+                    pointType
                 )
             ) {
                 drag = null;
@@ -681,7 +867,22 @@ function bindEvents() {
                 return;
             }
 
-            drag = S.mode;
+            if (S.mode !== pointType) {
+
+                S.mode = pointType;
+
+                $('originMode')?.classList.toggle(
+                    'active',
+                    S.mode === 'origin'
+                );
+
+                $('targetMode')?.classList.toggle(
+                    'active',
+                    S.mode === 'target'
+                );
+            }
+
+            drag = pointType;
 
             pushMapToolHistory();
 
@@ -708,6 +909,16 @@ function bindEvents() {
     window.addEventListener(
         'mousemove',
         e => {
+
+            /*
+             * Browsers and gesture add-ons sometimes claim a right-button drag
+             * for themselves (mouse gestures, drag-to-scroll). Marking the
+             * event as handled while the right button is down tells them the
+             * page is using that gesture.
+             */
+            if (e.buttons & 2) {
+                e.preventDefault();
+            }
 
             if (pan) {
 
@@ -794,6 +1005,29 @@ function bindEvents() {
         }
     );
 
+    /*
+     * The canvas alone is not enough: the menu is raised for whatever element
+     * is under the pointer when the right button comes up, and a right drag
+     * regularly ends over the sidebar or the toolbar. The guard therefore sits
+     * on the document and covers the whole map surface plus any drag that is
+     * in flight or has just finished.
+     */
+    document.addEventListener(
+        'contextmenu',
+        event => {
+
+            if (
+                isMapPointerBusy() ||
+                event.target
+                    ?.closest?.('.map')
+            ) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+        },
+        true
+    );
+
     c.addEventListener(
         'contextmenu',
         e => {
@@ -846,6 +1080,27 @@ function bindEvents() {
 
             pan =
                 null;
+
+            holdContextMenuGuard();
+
+            endMapPointerCapture();
+        }
+    );
+
+    /*
+     * A drag that ends outside the window, or a tab switch in the middle of
+     * one, must not leave the map stuck in a dragging state.
+     */
+    window.addEventListener(
+        'blur',
+        () => {
+
+            drag = null;
+            pan = null;
+
+            holdContextMenuGuard();
+
+            endMapPointerCapture();
         }
     );
 

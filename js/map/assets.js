@@ -248,6 +248,9 @@ function loadMarkerImage(asset) {
         };
 
     image.src =
+        inlineFileURL(
+            asset.path
+        ) ||
         resourceURL(
             asset.path
         );

@@ -68,10 +68,6 @@
     font-size: calc(12px * var(--a11y-text-scale));
 }
 
-.mobile-app .mobile-partner-link {
-    font-size: calc(10px * var(--a11y-text-scale));
-}
-
 :root[data-a11y-text-size="large"] .mobile-app .mobile-solution-metric > span,
 :root[data-a11y-text-size="large"] .mobile-app .mobile-solution-metric > small {
     font-size: 8px;

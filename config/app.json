@@ -1,4 +1,9 @@
 {
+  "offline": {
+    "enabled": true,
+    "mirror": "maps/tiles + maps/tiles-color + data/terrain",
+    "note": "Serve this checkout from scripts/offline-server.mjs (or the offline launcher) so every release asset resolves to the local mirror instead of https://assets.wardogs-artillery.com. Set enabled to false to use the published CDN again. See docs/offline.md."
+  },
   "collab": {
     "enabled": true,
     "serverUrl": "https://lobby.wardogs-artillery.com",
@@ -52,7 +57,7 @@
       "productName": "WARDOGS Artillery Calculator",
       "authorLabel": "by",
       "authorName": "Apollyon",
-      "authorUrl": "https://discord.com/users/202109460238434304",
+      "repositoryUrl": "https://github.com/apollyon-sys/wardogs-calculator",
       "version": "1.9.0"
     }
   },

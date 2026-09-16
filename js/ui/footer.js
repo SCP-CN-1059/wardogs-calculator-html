@@ -2,195 +2,35 @@
    FOOTER
    ========================= */
 
-const FOOTER_PARTNERS = [
-    {
-        id: 'wardogs-hub',
-        label: 'Community partner',
-        name: 'WARDOGSHUB',
-        url: 'https://wardogshub.net/?utm_source=wardogs-artillery&utm_medium=partner&utm_campaign=footer'
-    }
-];
+/*
+ * The footer carries exactly one link: the project's own repository. Partner
+ * and donation links used to live here as well; they were removed, and the
+ * link below is the single remaining entry point.
+ */
+const PROJECT_REPOSITORY_URL =
+    'https://github.com/apollyon-sys/wardogs-calculator';
 
-const DONATION_LINKS = [
-    {
-        id: 'ko-fi',
-        label: 'Support me on Ko-fi',
-        url: 'https://ko-fi.com/D3J32528AD',
-        icon: `
-            <svg
-                aria-hidden="true"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="1.8"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-            >
-                <path d="M4 7h13v6a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5V7Z"></path>
-                <path d="M17 9h1.25a2.75 2.75 0 0 1 0 5.5H17"></path>
-                <path d="M8 10.2c.8-.9 2.1-.4 2.5.4.4-.8 1.7-1.3 2.5-.4 1.2 1.3-.4 2.7-2.5 4.1-2.1-1.4-3.7-2.8-2.5-4.1Z"></path>
-            </svg>
-        `
-    },
-    {
-        id: 'boosty',
-        label: 'Donate via Boosty',
-        url: 'https://boosty.to/apollyonsys/donate',
-        icon: `
-            <svg
-                aria-hidden="true"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="1.8"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-            >
-                <path d="M13.5 2 5 13h6l-1 9 9-12h-6l.5-8Z"></path>
-            </svg>
-        `
-    }
-];
+function projectRepositoryUrl() {
 
-function createDonationLink(
-    donation,
-    placement
-) {
-
-    const link =
-        document.createElement(
-            'a'
-        );
-
-    link.className =
-        `donation-link donation-link-${donation.id}`;
-
-    link.href =
-        donation.url;
-
-    link.target =
-        '_blank';
-
-    link.rel =
-        'noopener noreferrer';
-
-    link.setAttribute(
-        'aria-label',
-        donation.label
+    return String(
+        APP_CONFIG
+            ?.site
+            ?.footer
+            ?.repositoryUrl ||
+        PROJECT_REPOSITORY_URL
     );
-
-    const icon =
-        document.createElement(
-            'span'
-        );
-
-    icon.className =
-        'donation-link-icon';
-
-    icon.innerHTML =
-        donation.icon;
-
-    const label =
-        document.createElement(
-            'span'
-        );
-
-    label.className =
-        'donation-link-label';
-
-    label.textContent =
-        donation.label;
-
-    link.append(
-        icon,
-        label
-    );
-
-    link.addEventListener(
-        'click',
-        () => {
-            if (
-                typeof trackAnalytics ===
-                'function'
-            ) {
-                trackAnalytics(
-                    'donation-click',
-                    {
-                        service:
-                            donation.id,
-
-                        placement
-                    }
-                );
-            }
-        }
-    );
-
-    return link;
 }
 
-function createDonationLinks(
-    placement = 'footer'
-) {
-
-    const links =
-        document.createElement(
-            'span'
-        );
-
-    links.className =
-        `donation-links donation-links-${placement}`;
-
-    DONATION_LINKS.forEach(
-        donation => {
-            links.appendChild(
-                createDonationLink(
-                    donation,
-                    placement
-                )
-            );
-        }
-    );
-
-    return links;
-}
-
-function createFooterPartner(partner) {
-    const item =
-        document.createElement(
-            'span'
-        );
-
-    item.className =
-        'footer-partner';
-
-    const label =
-        document.createElement(
-            'span'
-        );
-
-    label.className =
-        'footer-partner-label';
-
-    const partnerLabel =
-        typeof tr === 'function' &&
-        partner.id === 'wardogs-hub'
-            ? tr('communityPartner')
-            : partner.label;
-
-    label.textContent =
-        `${partnerLabel}:`;
+function createRepositoryLink(placement) {
 
     const link =
-        document.createElement(
-            'a'
-        );
+        document.createElement('a');
 
     link.className =
-        'footer-partner-link';
+        'footer-repository-link';
 
     link.href =
-        partner.url;
+        projectRepositoryUrl();
 
     link.target =
         '_blank';
@@ -199,35 +39,27 @@ function createFooterPartner(partner) {
         'noopener noreferrer';
 
     link.textContent =
-        partner.name;
+        'GitHub';
 
     link.addEventListener(
         'click',
         () => {
+
             if (
                 typeof trackAnalytics ===
                 'function'
             ) {
                 trackAnalytics(
-                    'partner-click',
+                    'repository-click',
                     {
-                        partner:
-                            partner.id,
-
-                        placement:
-                            'footer'
+                        placement
                     }
                 );
             }
         }
     );
 
-    item.append(
-        label,
-        link
-    );
-
-    return item;
+    return link;
 }
 
 const FEEDBACK_LAUNCHER_LABELS = {
@@ -392,41 +224,11 @@ function renderFooter() {
     meta.className =
         'footer-meta';
 
-    if (FOOTER_PARTNERS.length) {
-        const partners =
-            document.createElement(
-                'span'
-            );
-
-        partners.className =
-            'footer-partners';
-
-        FOOTER_PARTNERS.forEach(
-            partner => {
-                partners.appendChild(
-                    createFooterPartner(
-                        partner
-                    )
-                );
-            }
-        );
-
-        meta.appendChild(
-            partners
-        );
-    }
-
     if (feedbackFeatureEnabled()) {
         meta.appendChild(
             createFeedbackLauncher()
         );
     }
-
-    meta.appendChild(
-        createDonationLinks(
-            'footer'
-        )
-    );
 
     const author =
         document.createElement(
@@ -455,35 +257,17 @@ function renderFooter() {
         )
     );
 
-    const link =
-        document.createElement(
-            'a'
-        );
-
-    link.href =
-        config.authorUrl || '#';
-
-    link.target =
-        '_blank';
-
-    link.rel =
-        'noopener noreferrer';
-
-    const strong =
+    const authorName =
         document.createElement(
             'strong'
         );
 
-    strong.textContent =
+    authorName.textContent =
         config.authorName ||
         'Apollyon';
 
-    link.appendChild(
-        strong
-    );
-
     author.appendChild(
-        link
+        authorName
     );
 
     if (config.version) {
@@ -502,6 +286,25 @@ function renderFooter() {
             version
         );
     }
+
+    /*
+     * The single link of the footer: the project repository.
+     */
+    const separator =
+        document.createElement(
+            'span'
+        );
+
+    separator.className =
+        'footer-separator';
+
+    separator.textContent =
+        '·';
+
+    author.append(
+        separator,
+        createRepositoryLink('footer')
+    );
 
     meta.appendChild(
         author

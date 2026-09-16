@@ -485,7 +485,9 @@
 
     async function loadTerrainDefinition(definition) {
         const manifestUrl = new URL(
-            definition.terrainManifest,
+            typeof offlineResourcePath === 'function'
+                ? offlineResourcePath(definition.terrainManifest)
+                : definition.terrainManifest,
             document.baseURI
         ).href;
 

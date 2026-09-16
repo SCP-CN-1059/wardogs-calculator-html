@@ -26,6 +26,8 @@
 - Mouse-wheel zoom on desktop
 - Touch pinch zoom on mobile
 - Mouse/touch map panning
+- Right button places the artillery position, left button places the target
+- Draggable sidebar width
 - Fullscreen mode on desktop
 - Preset and custom maps
 - JSON-defined markers, zones, and polygons
@@ -98,7 +100,7 @@ Desktop Map Tool shortcuts:
 
 Letter shortcuts use physical keyboard positions, so they keep working when the active input language changes (for example, between English and Russian layouts).
 
-Desktop camera controls:
+Desktop camera and point controls:
 
 | Shortcut | Action |
 |---|---|
@@ -107,8 +109,24 @@ Desktop camera controls:
 | `Shift` + pan | Pan faster |
 | `+` | Zoom in |
 | `-` | Zoom out |
-| Right-click drag | Pan the map |
+| `Space` + left drag | Pan the map (the canvas then ignores point placement) |
+| Middle-click drag | Pan the map |
+| Left button on the map | Place or drag the **target** |
+| Right button on the map | Place or drag the **artillery position** |
 | Mouse wheel | Zoom at the cursor |
+| Drag the sidebar edge | Set the sidebar width |
+| `←` / `→` on the sidebar handle | Fine-tune the sidebar width (`Shift` for a bigger step) |
+| Double-click the sidebar handle | Reset the default sidebar width |
+
+Because the mouse buttons carry fixed meanings, the **Artillery / Target** buttons in the
+sidebar choose which point the coordinate fields edit; placing a point with the mouse moves
+that selection with it. The sidebar width is remembered per browser.
+
+The browser context menu never interrupts a map drag: it is suppressed across the map surface,
+and across the whole page while a drag is in flight and for a short moment after it, because the
+menu is raised for whatever element sits under the pointer when the button comes up — often the
+sidebar or the toolbar rather than the canvas. Pointer capture keeps the drag alive when the
+pointer leaves the canvas, and a right-button drag also blocks text selection.
 
 Map Tool shortcuts and the keyboard pan speed can be configured in:
 
